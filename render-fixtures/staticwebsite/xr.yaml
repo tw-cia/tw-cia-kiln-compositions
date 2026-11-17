@@ -1,15 +1,8 @@
-apiVersion: platform.example.com/v1alpha1
-kind: StaticWebsite
+apiVersion: platform.demotw.com/v1alpha1
+kind: StaticWebSite
 metadata:
-  name: example-website
+  name: docs-site
 spec:
-  bucketName: my-website-bucket
-  domainName: example.com
-  region: us-east-1
-  versioningEnabled: false
-  blockPublicAccess: true
-  enableLogging: false
-  cacheTtl: 3600
-  tags:
-    Environment: production
-    Application: website
+  domainName: docs.example.com
+  hostedZoneId: Z0123456789ABCDEFGHIJ
+  bucketName: docs-example-com-assets

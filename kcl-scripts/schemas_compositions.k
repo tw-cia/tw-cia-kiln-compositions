@@ -1,6 +1,17 @@
 # Your composite resource (XR) spec schemas, one per kind, e.g. `schema MyKindSpec:`.
 
 schema StaticWebsiteSpec:
+	bucketName: str
+	domainName: str
+	acmCertificateArn?: str
+	indexDocument: str = "index.html"
+	errorDocument: str = "error.html"
+	enableLogging: bool = False
+	logBucketName?: str
+	enableCloudFrontCompression: bool = True
+	cacheTTL: int = 3600
+
+schema StaticWebsiteSpec:
     """Static website hosted on S3 with CloudFront distribution."""
 
     # S3 bucket name (must be globally unique)

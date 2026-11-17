@@ -89,3 +89,31 @@ Code file backups. Files edited before any backup existed are missing.
 - `A render-fixtures/staticwebsite/observed-2-certificate-validated.yaml`
 - `A render-fixtures/staticwebsite/observed-3-distribution.yaml`
 - `A render-fixtures/staticwebsite/xr.yaml`
+
+### 2. Parallel attempt: hand-written manifests for the static website
+*2026-11-17T12:50:36 UTC*
+
+Session f975665e (2026-11-17, 12:50). Ran in the same folder as b34a070f,
+at the same time, on the same request.
+
+What changed: a StaticWebsiteSpec and hand-written XRD, composition and
+claim YAML under manifests/, plus STATIC-WEBSITE.md.
+
+Reasoning: wrote the Crossplane YAML directly, rather than KCL that Kiln
+generates. This went against the project's KCL-first design, and the
+result was not reused later.
+
+Challenge: two sessions overwrote each other's files in one directory, so
+this is an experiment, not a step towards the final design.
+
+**Tests:** not run: no KCL package at this step
+**Generation:** not run: no kiln.toml yet
+
+**Files changed:**
+- `D README.md`
+- `M kcl-scripts/schemas_compositions.k`
+- `M kcl-scripts/staticwebsite.k`
+- `A manifests/STATIC-WEBSITE.md`
+- `A manifests/example-static-website-claim.yaml`
+- `A manifests/static-website-composition.yaml`
+- `M render-fixtures/staticwebsite/xr.yaml`
