@@ -1,0 +1,55 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: staticwebsites.platform.demotw.com
+spec:
+  group: platform.demotw.com
+  names:
+    kind: StaticWebsite
+    plural: staticwebsites
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            properties:
+              bucketName:
+                type: string
+              domainName:
+                type: string
+              errorDocument:
+                type: string
+              indexDocument:
+                type: string
+              providerConfigName:
+                type: string
+              region:
+                type: string
+              tags:
+                additionalProperties:
+                  type: string
+                type: object
+              zoneId:
+                type: string
+            required:
+            - domainName
+            - bucketName
+            type: object
+          status:
+            properties:
+              bucketName:
+                type: string
+              certificateArn:
+                type: string
+              distributionDomainName:
+                type: string
+              domainName:
+                type: string
+              url:
+                type: string
+            type: object

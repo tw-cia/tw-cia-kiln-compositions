@@ -1,8 +1,14 @@
 apiVersion: platform.demotw.com/v1alpha1
-kind: StaticWebSite
+kind: StaticWebsite
 metadata:
-  name: docs-site
+  name: test-trololo
 spec:
-  domainName: docs.example.com
-  hostedZoneId: Z0123456789ABCDEFGHIJ
-  bucketName: docs-example-com-assets
+  domainName: test.trololo.demotw.com
+  bucketName: test-trololo-demotw-com
+  region: us-east-1
+  indexDocument: index.html
+  errorDocument: 404.html
+  zoneId: Z0510802PA88E7HZZ597
+  tags:
+    environment: test
+    domain: trololo.demotw.com

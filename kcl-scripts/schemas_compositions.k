@@ -1,13 +1,19 @@
+# Your composite resource (XR) spec schemas, one per kind, e.g. `schema MyKindSpec:`.
+
 schema StaticWebsiteSpec:
- bucketName: str
- domainName: str
- indexDocument: str = "index.html"
- errorDocument: str = "404.html"
- enableCaching: bool = True
- cacheTTL: int = 3600
- tags: {str: str} = {}
+    domainName: str
+    bucketName: str
+    region?: str
+    indexDocument?: str
+    errorDocument?: str
+    tags?: {str: str}
+    zoneId?: str
+    providerConfigName?: str
+    [str]: any
+
 schema StaticWebsiteStatus:
- bucketArn: str = ""
- distributionId: str = ""
- distributionDomain: str = ""
- ready: bool = False
+    bucketName?: str
+    domainName?: str
+    distributionDomainName?: str
+    certificateArn?: str
+    url?: str

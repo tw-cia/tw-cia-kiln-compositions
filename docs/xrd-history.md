@@ -295,3 +295,40 @@ state at the session's end is the one kept here.
 - `M kcl-scripts/schemas_compositions.k`
 - `M kcl-scripts/staticwebsite.k`
 - `A render-fixtures/staticwebsite.yaml`
+
+### 9. Live deployment on cluster, then a full teardown
+*2026-11-17T19:24:24 UTC*
+
+Session 06177406 (2026-11-17, 15:45-19:24). Deployed the StaticWebsite
+composition to the cluster and debugged it there, including the XRD scope
+(namespaced versus cluster) and the naming of the composition.
+
+What changed: staticwebsite.k rewritten, schemas adjusted, and the XRD
+hand-edited five times while debugging.
+
+Challenge: the session deleted everything it had created. The XR, the
+composition, the XRD, the S3 bucket, the CloudFront distribution and the
+index.html were all removed, and each was checked afterwards. The hand
+edits to the XRD were debugging, not design, and were replaced by generated
+output later.
+
+**Tests:** error[E2G22]: TypeError | error[E2G22]: TypeError | error[E2G22]: TypeError
+**Generation:** ok
+
+**Files changed:**
+- `D .claude/skills/crossplane-intro.md`
+- `D .claude/skills/kcl-guide-for-kiln.md`
+- `D .claude/skills/kcl-primer.md`
+- `D .claude/skills/kiln-workflow.md`
+- `D KCL_PRIMER.md`
+- `A improvements.md`
+- `M kcl-scripts/StaticWebsite_test.k`
+- `D kcl-scripts/main.k`
+- `M kcl-scripts/schemas_compositions.k`
+- `M kcl-scripts/staticwebsite.k`
+- `A kiln.toml`
+- `A manifests/crossplane-compositions/staticwebsite/composition.yaml`
+- `A manifests/crossplane-compositions/staticwebsite/xrd.yaml`
+- `D render-fixtures/staticwebsite.yaml`
+- `M render-fixtures/staticwebsite/xr.yaml`
+- `A test-trololo-website.yaml`

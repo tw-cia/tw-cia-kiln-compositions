@@ -1,0 +1,3 @@
+group = "platform.demotw.com"
+format = "yaml"
+scope = "Namespaced"
