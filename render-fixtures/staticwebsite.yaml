@@ -1,0 +1,15 @@
+apiVersion: platform.demotw.com/v1alpha1
+kind: StaticWebsite
+metadata:
+  name: example-site
+spec:
+  bucketName: example-site-bucket
+  domainName: example.com
+  indexDocument: index.html
+  errorDocument: 404.html
+  enableCaching: true
+  cacheTTL: 3600
+  tags:
+    Environment: production
+    Team: platform
+    Application: website

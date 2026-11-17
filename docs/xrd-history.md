@@ -263,3 +263,35 @@ came later, in another session.
 **Files changed:**
 - `D kcl-scripts/composition_s3staticwebsite.k`
 - `D kcl-scripts/example_staticsite.k`
+
+### 8. Skills and StaticWebsite composition, rewritten under the Kiln workflow
+*2026-11-17T14:43:19 UTC*
+
+Session bf64f0d6 (2026-11-17, 14:02-14:43). The largest early session, with 50
+edits. It produced a set of skills under .claude/skills/, a KCL primer,
+and a rewritten StaticWebsite composition with its own test file.
+
+What changed: staticwebsite.k and StaticWebsite_test.k, the schemas, the
+skill notes, and render-fixtures/staticwebsite.yaml.
+
+Reasoning: the session wrote notes on Kiln and KCL for later use, and
+rebuilt the composition around the Kiln workflow.
+
+Challenge: this state fails the KCL parser (InvalidSyntax) in the
+reconstruction. The rewrite was iterated many times in the session, so the
+state at the session's end is the one kept here.
+
+**Tests:** error[E1001]: InvalidSyntax
+**Generation:** not run: no kiln.toml yet
+
+**Files changed:**
+- `A .claude/skills/crossplane-intro.md`
+- `A .claude/skills/kcl-guide-for-kiln.md`
+- `A .claude/skills/kcl-primer.md`
+- `A .claude/skills/kiln-workflow.md`
+- `A KCL_PRIMER.md`
+- `A kcl-scripts/StaticWebsite_test.k`
+- `A kcl-scripts/main.k`
+- `M kcl-scripts/schemas_compositions.k`
+- `M kcl-scripts/staticwebsite.k`
+- `A render-fixtures/staticwebsite.yaml`
