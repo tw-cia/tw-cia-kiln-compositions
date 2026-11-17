@@ -1,0 +1,11 @@
+apiVersion: cloudfront.aws.m.upbound.io/v1beta1
+kind: Distribution
+metadata:
+  name: example-site-4d5e6f
+  annotations:
+    crossplane.io/composition-resource-name: distribution
+status:
+  atProvider:
+    id: E2EXAMPLEDISTID
+    arn: arn:aws:cloudfront::123456789012:distribution/E2EXAMPLEDISTID
+    domainName: d111111abcdef8.cloudfront.net

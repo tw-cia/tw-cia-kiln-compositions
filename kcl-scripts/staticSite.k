@@ -1,232 +1,183 @@
-"""
-Static Site Composition Implementation
+import json
+import .schemas_compositions
+import .schemas_providers
 
-Renders Crossplane resources for S3 bucket + CloudFront distribution.
-"""
+# AWS managed CloudFront cache policy "Managed-CachingOptimized". Stable
+# across accounts/regions; there is no way to look this up at compose time.
+_cachingOptimizedPolicyId = "658327ea-f89d-4fab-a63d-7e88639e58f6"
 
-import base64
+composeStaticSite = lambda oxr, ocds -> [any] {
+    spec: schemas_compositions.StaticSiteSpec = oxr.spec
 
-_site = option("observedCompositeResource") or {}
-_siteSpec = _site.get("spec") or {}
-_siteName = _siteSpec.get("siteName") or "unknown"
-_domainName = _siteSpec.get("domainName") or ""
-_alternateNames = _siteSpec.get("alternateNames") or []
-_bucketName = _siteSpec.get("bucketName") or "${_siteName}-website-$(date +%s)"
-_enableVersioning = _siteSpec.get("enableVersioning") or False
-_enableLogging = _siteSpec.get("enableLogging") or True
-_loggingBucket = _siteSpec.get("loggingBucket") or "${_siteName}-logs"
-_defaultRootObject = _siteSpec.get("defaultRootObject") or "index.html"
-_errorResponses = _siteSpec.get("errorResponses") or {"403": "index.html", "404": "404.html"}
-_viewerProtocolPolicy = _siteSpec.get("viewerProtocolPolicy") or "redirect-to-https"
-_cachePolicyId = _siteSpec.get("cachePolicyId") or "658327ea-f89d-4fab-a63d-7e88639e58f6"
-_originRequestPolicyId = _siteSpec.get("originRequestPolicyId") or "216adef5-5c7f-47e4-b989-5492eafa07d3"
-_tags = _siteSpec.get("tags") or {}
-_region = "us-east-1"
+    _bucketName = "bucket"
+    _publicAccessBlockName = "bucket-public-access-block"
+    _oacName = "origin-access-control"
+    _distributionName = "distribution"
+    _bucketPolicyName = "bucket-policy"
 
-# Build tags with defaults
-_resourceTags = {**_tags, "managed-by": "kiln", "site": _siteName}
+    _originId = "s3-origin"
 
-# S3 Bucket for website content
-_items = [
-    {
-        apiVersion: "s3.aws.upbound.io/v1beta1"
-        kind: "Bucket"
-        metadata: {
-            name: "site-bucket-${_siteName}"
-            namespace: _site.metadata.namespace
-        }
-        spec: {
-            forProvider: {
-                bucket: _bucketName
-                region: _region
-                tags: _resourceTags
-            }
-            providerConfigRef: {
-                name: "default"
-            }
-        }
+    # Deterministic: S3 regional domain names are derived from bucket name
+    # and region, not assigned by AWS, so this does not need observed state.
+    _bucketDomainName = "${spec.bucketName}.s3.${spec.region}.amazonaws.com"
+
+    _bucketForProvider: schemas_providers.S3AwsmUpboundIoV1beta1BucketSpecForProvider = {
+        region = spec.region
+        tags = spec.tags
     }
-]
 
-# S3 Bucket Versioning (if enabled)
-if _enableVersioning:
-    _items.append({
-        apiVersion: "s3.aws.upbound.io/v1beta1"
-        kind: "BucketVersioning"
-        metadata: {
-            name: "site-versioning-${_siteName}"
-            namespace: _site.metadata.namespace
+    _bucket = {
+        apiVersion = "s3.aws.m.upbound.io/v1beta1"
+        kind = "Bucket"
+        metadata.annotations = {
+            "crossplane.io/external-name" = spec.bucketName
+            "krm.kcl.dev/composition-resource-name" = _bucketName
         }
-        spec: {
-            forProvider: {
-                bucket: _bucketName
-                versioningConfiguration: {
-                    status: "Enabled"
-                }
-            }
-            providerConfigRef: {
-                name: "default"
-            }
+        spec.forProvider = _bucketForProvider
+    }
+
+    _publicAccessBlockForProvider: schemas_providers.S3AwsmUpboundIoV1beta1BucketPublicAccessBlockSpecForProvider = {
+        bucket = spec.bucketName
+        region = spec.region
+        blockPublicAcls = True
+        blockPublicPolicy = True
+        ignorePublicAcls = True
+        restrictPublicBuckets = True
+    }
+
+    _publicAccessBlock = {
+        apiVersion = "s3.aws.m.upbound.io/v1beta1"
+        kind = "BucketPublicAccessBlock"
+        metadata.annotations = {
+            "crossplane.io/external-name" = spec.bucketName
+            "krm.kcl.dev/composition-resource-name" = _publicAccessBlockName
         }
+        spec.forProvider = _publicAccessBlockForProvider
+    }
+
+    _oacForProvider: schemas_providers.CloudfrontAwsmUpboundIoV1beta1OriginAccessControlSpecForProvider = {
+        name = spec.bucketName
+        description = "OAC for ${spec.bucketName}"
+        originAccessControlOriginType = "s3"
+        signingBehavior = "always"
+        signingProtocol = "sigv4"
+    }
+
+    _oac = {
+        apiVersion = "cloudfront.aws.m.upbound.io/v1beta1"
+        kind = "OriginAccessControl"
+        metadata.annotations = {
+            "crossplane.io/external-name" = spec.bucketName
+            "krm.kcl.dev/composition-resource-name" = _oacName
+        }
+        spec.forProvider = _oacForProvider
+    }
+
+    # The distribution needs the OAC's AWS-assigned ID, which only exists
+    # once the OAC has been observed.
+    _observedOacAtProvider = ocds[_oacName]?.Resource?.status?.atProvider
+
+    _oacStatus = lambda atProvider -> schemas_providers.CloudfrontAwsmUpboundIoV1beta1OriginAccessControlStatusAtProvider {
+        _status: schemas_providers.CloudfrontAwsmUpboundIoV1beta1OriginAccessControlStatusAtProvider = atProvider
+        _status
+    }
+    _observedOac = _oacStatus(_observedOacAtProvider) if _observedOacAtProvider else None
+    _oacId = _observedOac?.id
+
+    _distributionForProvider: schemas_providers.CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProvider = {
+        enabled = True
+        isIpv6Enabled = True
+        comment = "Static site ${spec.bucketName}"
+        defaultRootObject = spec.indexDocument
+        priceClass = spec.priceClass
+        tags = spec.tags
+        origin = [{
+            originId = _originId
+            domainName = _bucketDomainName
+            originAccessControlId = _oacId
+        }]
+        defaultCacheBehavior = {
+            targetOriginId = _originId
+            viewerProtocolPolicy = "redirect-to-https"
+            allowedMethods = ["GET", "HEAD"]
+            cachedMethods = ["GET", "HEAD"]
+            compress = True
+            cachePolicyId = _cachingOptimizedPolicyId
+        }
+        restrictions.geoRestriction = {
+            restrictionType = "none"
+        }
+        viewerCertificate.cloudfrontDefaultCertificate = True
+    } if _oacId else None
+
+    _distribution = {
+        apiVersion = "cloudfront.aws.m.upbound.io/v1beta1"
+        kind = "Distribution"
+        metadata.annotations = {
+            "crossplane.io/external-name" = spec.bucketName
+            "krm.kcl.dev/composition-resource-name" = _distributionName
+        }
+        spec.forProvider = _distributionForProvider
+    } if _distributionForProvider else None
+
+    # The bucket policy must name the distribution's ARN as the allowed
+    # caller, which only exists once the distribution has been observed.
+    _observedDistributionAtProvider = ocds[_distributionName]?.Resource?.status?.atProvider
+
+    _distributionStatus = lambda atProvider -> schemas_providers.CloudfrontAwsmUpboundIoV1beta1DistributionStatusAtProvider {
+        _status: schemas_providers.CloudfrontAwsmUpboundIoV1beta1DistributionStatusAtProvider = atProvider
+        _status
+    }
+    _observedDistribution = _distributionStatus(_observedDistributionAtProvider) if _observedDistributionAtProvider else None
+    _distributionId = _observedDistribution?.id
+    _distributionArn = _observedDistribution?.arn
+    _distributionDomainName = _observedDistribution?.domainName
+
+    _bucketPolicyDocument = json.encode({
+        Version = "2012-10-17"
+        Statement = [{
+            Sid = "AllowCloudFrontServicePrincipalReadOnly"
+            Effect = "Allow"
+            Principal = {Service = "cloudfront.amazonaws.com"}
+            Action = "s3:GetObject"
+            Resource = "arn:aws:s3:::${spec.bucketName}/*"
+            Condition = {
+                StringEquals = {"AWS:SourceArn" = _distributionArn}
+            }
+        }]
     })
 
-# S3 Bucket ACL
-_items.append({
-    apiVersion: "s3.aws.upbound.io/v1beta1"
-    kind: "BucketACL"
-    metadata: {
-        name: "site-acl-${_siteName}"
-        namespace: _site.metadata.namespace
-    }
-    spec: {
-        forProvider: {
-            bucket: _bucketName
-            acl: "private"
-        }
-        providerConfigRef: {
-            name: "default"
-        }
-    }
-})
+    _bucketPolicyForProvider: schemas_providers.S3AwsmUpboundIoV1beta1BucketPolicySpecForProvider = {
+        bucket = spec.bucketName
+        region = spec.region
+        policy = _bucketPolicyDocument
+    } if _distributionArn else None
 
-# S3 Bucket Public Access Block
-_items.append({
-    apiVersion: "s3.aws.upbound.io/v1beta1"
-    kind: "BucketPublicAccessBlock"
-    metadata: {
-        name: "site-pab-${_siteName}"
-        namespace: _site.metadata.namespace
-    }
-    spec: {
-        forProvider: {
-            bucket: _bucketName
-            blockPublicAcls: True
-            blockPublicPolicy: True
-            ignorePublicAcls: True
-            restrictPublicBuckets: True
+    _bucketPolicy = {
+        apiVersion = "s3.aws.m.upbound.io/v1beta1"
+        kind = "BucketPolicy"
+        metadata.annotations = {
+            "crossplane.io/external-name" = spec.bucketName
+            "krm.kcl.dev/composition-resource-name" = _bucketPolicyName
         }
-        providerConfigRef: {
-            name: "default"
-        }
-    }
-})
+        spec.forProvider = _bucketPolicyForProvider
+    } if _bucketPolicyForProvider else None
 
-# CloudFront Origin Access Identity (OAI)
-_items.append({
-    apiVersion: "cloudfront.aws.upbound.io/v1beta1"
-    kind: "OriginAccessIdentity"
-    metadata: {
-        name: "site-oai-${_siteName}"
-        namespace: _site.metadata.namespace
-    }
-    spec: {
-        forProvider: {
-            comment: "OAI for ${_siteName} website"
+    _xr = {
+        apiVersion = oxr.apiVersion
+        kind = oxr.kind
+        metadata = oxr.metadata
+        status = schemas_compositions.StaticSiteStatus {
+            bucketArn = "arn:aws:s3:::${spec.bucketName}"
+            bucketDomainName = _bucketDomainName
+            distributionId = _distributionId
+            distributionArn = _distributionArn
+            distributionDomainName = _distributionDomainName
         }
-        providerConfigRef: {
-            name: "default"
-        }
-    }
-})
+    } if _distributionId else None
 
-# S3 Bucket Policy for CloudFront OAI access
-_items.append({
-    apiVersion: "s3.aws.upbound.io/v1beta1"
-    kind: "BucketPolicy"
-    metadata: {
-        name: "site-policy-${_siteName}"
-        namespace: _site.metadata.namespace
-    }
-    spec: {
-        forProvider: {
-            bucket: _bucketName
-            policy: {
-                Version: "2012-10-17"
-                Statement: [
-                    {
-                        Sid: "CloudFrontAccess"
-                        Effect: "Allow"
-                        Principal: {
-                            AWS: "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity"
-                        }
-                        Action: "s3:GetObject"
-                        Resource: "arn:aws:s3:::${_bucketName}/*"
-                    }
-                ]
-            }
-        }
-        providerConfigRef: {
-            name: "default"
-        }
-    }
-})
-
-# CloudFront Distribution
-_errorResponseConfigs = []
-for statusCode, filePath in _errorResponses:
-    _errorResponseConfigs.append({
-        errorCode: int(statusCode)
-        responsePagePath: "/${filePath}"
-        responseCode: statusCode
-        errorCachingMinTtl: 300
-    })
-
-_items.append({
-    apiVersion: "cloudfront.aws.upbound.io/v1beta1"
-    kind: "Distribution"
-    metadata: {
-        name: "site-dist-${_siteName}"
-        namespace: _site.metadata.namespace
-    }
-    spec: {
-        forProvider: {
-            enabled: True
-            defaultRootObject: _defaultRootObject
-            defaultCacheBehavior: {
-                allowedMethods: ["GET", "HEAD", "OPTIONS"]
-                cachedMethods: ["GET", "HEAD"]
-                targetOriginId: "s3Origin"
-                viewerProtocolPolicy: _viewerProtocolPolicy
-                cachePolicyId: _cachePolicyId
-                originRequestPolicyId: _originRequestPolicyId
-                compress: True
-            }
-            origin: [
-                {
-                    domainName: "${_bucketName}.s3.${_region}.amazonaws.com"
-                    originId: "s3Origin"
-                    s3OriginConfig: [
-                        {
-                            originAccessIdentity: "origin-access-identity/cloudfront/example"
-                        }
-                    ]
-                }
-            ]
-            restrictions: {
-                geoRestriction: [
-                    {
-                        restrictionType: "none"
-                    }
-                ]
-            }
-            viewerCertificate: [
-                {
-                    cloudfrontDefaultCertificate: True
-                }
-            ]
-            tags: _resourceTags
-        }
-        providerConfigRef: {
-            name: "default"
-        }
-    }
-})
-
-# Update the composite resource status
-_site.status = {
-    s3BucketName: _bucketName
-    cloudFrontDomainName: "d*.cloudfront.net"
-    ready: True
+    _baseResources = [_bucket, _publicAccessBlock, _oac]
+    _withDistribution = _baseResources + ([_distribution] if _distribution else [])
+    _withBucketPolicy = _withDistribution + ([_bucketPolicy] if _bucketPolicy else [])
+    _withBucketPolicy + ([_xr] if _xr else [])
 }
-
-items = _items

@@ -1,0 +1,11 @@
+apiVersion: platform.demotw.com/v1alpha1
+kind: StaticSite
+metadata:
+  name: example-site
+spec:
+  bucketName: example-static-site
+  region: eu-west-1
+  indexDocument: index.html
+  priceClass: PriceClass_100
+  tags:
+    project: example

@@ -148,3 +148,38 @@ produce, so they were later dropped.
 - `D manifests/STATIC-WEBSITE.md`
 - `D manifests/example-static-website-claim.yaml`
 - `D manifests/static-website-composition.yaml`
+
+### 4. StaticSite: three observed-state stages, with a KCL type error
+*2026-11-17T13:15:11 UTC*
+
+Session 9a0da484 (2026-11-17, 13:11). Built the first composition with the
+observed-state staging the project later kept: the bucket, public access
+block and OAC first; the distribution once the OAC is observed; the
+status once the distribution has a domain name.
+
+What changed: staticsite.k, staticsite_test.k, the StaticSiteSpec and
+observed fixtures under render-fixtures/staticsite/.
+
+Reasoning: the function reads everything it needs from `ocds`, so each stage
+can be checked on its own, rather than the whole site appearing at once.
+
+Challenge: at this state the tests fail with a KCL TypeError. The session
+reported the composition as "tested and verified", but this reconstruction
+shows the test run failing.
+
+**Tests:** error[E2G22]: TypeError | error[E2G22]: TypeError | error[E2G22]: TypeError
+**Generation:** not run: no kiln.toml yet
+
+**Files changed:**
+- `D COMPOSITION.md`
+- `D examples/QUICKSTART.md`
+- `D examples/staticsite-advanced.yaml`
+- `D examples/staticsite-basic.yaml`
+- `M kcl-scripts/schemas_compositions.k`
+- `M kcl-scripts/staticSite.k`
+- `D kcl-scripts/staticSiteComposition.k`
+- `A kcl-scripts/staticsite_test.k`
+- `A render-fixtures/staticsite/observed-distribution.yaml`
+- `A render-fixtures/staticsite/observed-oac-and-distribution.yaml`
+- `A render-fixtures/staticsite/observed-oac.yaml`
+- `A render-fixtures/staticsite/xr.yaml`
