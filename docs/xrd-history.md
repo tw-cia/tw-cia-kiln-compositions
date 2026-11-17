@@ -244,3 +244,22 @@ own summary, and repeated in the project's AGENTS.md.
 - `D manifests/staticsite.kcl`
 - `D manifests/staticsite_composition.kcl`
 - `D manifests/staticsite_xrd.kcl`
+
+### 7. Kiln initialised: first schema and test, one edit
+*2026-11-17T13:56:02 UTC*
+
+Session 3bdaaf2f (2026-11-17, 13:56). Ran `kiln init` and wrote the first
+spec schema in schemas_compositions.k.
+
+Reasoning: Kiln's workflow is schema, then test, then compose, then
+generate. This session started at the schema, as the workflow requires.
+
+Challenge: the session stopped after one edit. The composition and tests
+came later, in another session.
+
+**Tests:** not run: no KCL package at this step
+**Generation:** not run: no kiln.toml yet
+
+**Files changed:**
+- `D kcl-scripts/composition_s3staticwebsite.k`
+- `D kcl-scripts/example_staticsite.k`
