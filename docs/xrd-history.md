@@ -1,0 +1,91 @@
+# History of the Kiln compositions and XRDs
+
+This project had no git repository until a baseline commit was made on the
+\`main\` branch. Everything before that was reconstructed after the fact.
+
+Each commit on \`main\` is one step in that history. Every step updates this
+file, so the file at any commit describes everything up to that point. The
+steps before the last commit were rebuilt from the sources described below.
+The last commit sets the tree to the project as it stood when this was
+written, and records where the reconstruction differs from the original.
+
+## How the steps were reconstructed
+
+Three sources, in order of how much they could be trusted:
+
+1. **Claude Code file backups.** Claude Code keeps a versioned copy of each
+   file before each edit, under \`~/.claude/file-history\`. The session
+   transcripts index them with timestamps. Each backup is a complete copy of
+   the file at that moment. This is the main source.
+2. **Session transcripts.** Every \`Write\` and \`Edit\` call is recorded with its
+   arguments. These replay the changes the backups do not capture, and confirm
+   them.
+3. **Cluster metadata.** Each XRD carries a \`generation\` counter and
+   \`managedFields\` timestamps, which date when it was applied.
+
+The replay applies every backup and every edit in time order. A backup resets a
+file to its recorded content. An edit is applied only if its text is present,
+and otherwise it is skipped. Generated manifests were regenerated from the
+reconstructed KCL with \`kiln generate-all\`, where that succeeded.
+
+For the session in which the StaticWebSite and CdnDistribution work was done,
+the reconstruction matches the test results observed live: 86, 86, 87, 94, 95
+and 102 tests passing, at each step.
+
+## What the reconstruction cannot recover
+
+- **Edits before the first backup.** Several early files were edited before any
+  backup was made. Their starting content is unknown.
+- **Shell writes.** Files written with \`cat >\`, \`sed -i\`, \`kiln import\` or
+  \`kiln install-skills\` are not recorded as edits. Their content comes from the
+  final tree, not from the time they were written.
+- **Deletions.** A file deleted with \`rm\` leaves no record. Experimental files
+  are kept until the last session that touched them, and then dropped.
+- **Parallel sessions.** From 12:40 to 14:43 on 17 November, several sessions
+  wrote into the same folder at the same time, on the same request. Their
+  states interleave, and the steps show the state at the end of each session,
+  not a clean design step.
+- **Test results before 16:00 on 17 November.** Intermediate states from before
+  then fail to type-check when rebuilt. That is either the state at the time, or
+  a gap in the reconstruction. The transcripts do not say which.
+- **Case-insensitive file names.** macOS treats \`StaticWebsite_test.k\` and
+  \`staticwebsite_test.k\` as one file. The last step fixes the name.
+
+## Steps
+
+### 1. StaticWebSite: first attempt, from an empty Kiln project
+*2026-11-17T12:44:05 UTC*
+
+Session b34a070f (2026-11-17). The first request in the project: an empty
+Kiln project, asked for a composition that serves static websites from S3
+through CloudFront.
+
+What changed: a StaticWebsite.k composition, a StaticWebsiteSpec in
+schemas_compositions.k, a README and a sample XR under render-fixtures/.
+
+Reasoning: none recorded beyond the request. The session took
+`kiln generate` succeeding as proof the composition was right.
+
+Challenge: no tests were written, and the Kiln workflow (schema, failing
+test, compose, then generate) was not followed. The reconstruction has no
+test results for this state.
+
+Reconstructed: this commit is built from session transcripts and Claude
+Code file backups. Files edited before any backup existed are missing.
+
+**Tests:** not run: no KCL package at this step
+**Generation:** not run: no kiln.toml yet
+
+**Files changed:**
+- `A .gitignore`
+- `A AGENTS.md`
+- `A README.md`
+- `A kcl-scripts/cdndistribution.k`
+- `A kcl-scripts/kcl.mod`
+- `A kcl-scripts/schemas_compositions.k`
+- `A kcl-scripts/schemas_providers.k`
+- `A kcl-scripts/staticwebsite.k`
+- `A render-fixtures/staticwebsite/observed-1-bucket-and-access-control.yaml`
+- `A render-fixtures/staticwebsite/observed-2-certificate-validated.yaml`
+- `A render-fixtures/staticwebsite/observed-3-distribution.yaml`
+- `A render-fixtures/staticwebsite/xr.yaml`
