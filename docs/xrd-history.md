@@ -215,3 +215,32 @@ that later states build on.
 - `D render-fixtures/staticsite/observed-oac-and-distribution.yaml`
 - `D render-fixtures/staticsite/observed-oac.yaml`
 - `D render-fixtures/staticsite/xr.yaml`
+
+### 6. StaticSite: schemas and examples, but no tests
+*2026-11-17T13:31:18 UTC*
+
+Session 9254a59e (2026-11-17, 13:26). Three files changed: a composition
+schema, an S3 composition and an example.
+
+Reasoning: the session acknowledged the request to focus on KCL and then
+skipped the tests. The user had to correct this.
+
+Challenge: the project rule is that tests come with every kind, even when
+the rest of the work is deferred. Recorded as a lesson in the session's
+own summary, and repeated in the project's AGENTS.md.
+
+**Tests:** not run: no KCL package at this step
+**Generation:** not run: no kiln.toml yet
+
+**Files changed:**
+- `D examples/README.md`
+- `D examples/staticsite_advanced.kcl`
+- `D examples/staticsite_example.kcl`
+- `A kcl-scripts/composition_s3staticwebsite.k`
+- `A kcl-scripts/example_staticsite.k`
+- `M kcl-scripts/schemas_compositions.k`
+- `D manifests/INDEX.md`
+- `D manifests/STATICSITE.md`
+- `D manifests/staticsite.kcl`
+- `D manifests/staticsite_composition.kcl`
+- `D manifests/staticsite_xrd.kcl`

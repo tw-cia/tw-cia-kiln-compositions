@@ -1,56 +1,45 @@
-# Your composite resource (XR) spec schemas, one per kind, e.g. `schema MyKindSpec:`.
+# Composite resource (XR) spec schemas
 
-schema StaticSiteSpec:
-    r"""
-    A static website: a private S3 bucket behind a CloudFront distribution
-    that reads it through an Origin Access Control. Served on the
-    distribution's own *.cloudfront.net domain; no custom domain or
-    certificate is composed.
+schema S3StaticWebsiteSpec:
+    """Static website hosted on S3 with CloudFront distribution"""
 
-    Attributes
-    ----------
-    bucketName : str, required
-        Name of the S3 bucket to create. Must be a globally unique, valid
-        S3 bucket name. Also used as the external-name for every composed
-        resource that is keyed by bucket name.
-    region : str, default is "us-east-1", optional
-        AWS region the S3 bucket (and its related S3 resources) are created in.
-        CloudFront itself is a global service and has no region.
-    indexDocument : str, default is "index.html", optional
-        Object CloudFront returns for requests to the root URL.
-    priceClass : str, default is "PriceClass_100", optional
-        CloudFront price class: PriceClass_100, PriceClass_200, or PriceClass_All.
-    tags : {str:str}, default is Undefined, optional
-        Tags applied to the bucket and the distribution.
-    """
+    # Basic site configuration
+    siteName: str
+    """Name of the website (used as S3 bucket prefix)"""
 
-    bucketName: str
-    region: str = "us-east-1"
+    domainName?: str
+    """Domain name for Route53 record (optional)"""
+
+    certificateArn?: str
+    """ACM certificate ARN for HTTPS (optional)"""
+
+    # S3 configuration
     indexDocument: str = "index.html"
-    priceClass: "PriceClass_100" | "PriceClass_200" | "PriceClass_All" = "PriceClass_100"
-    tags?: {str:str}
-    [str]: any
+    """Main index document"""
 
-schema StaticSiteStatus:
-    r"""
-    Attributes
-    ----------
-    bucketArn : str, default is Undefined, optional
-        ARN of the composed S3 bucket.
-    bucketDomainName : str, default is Undefined, optional
-        Regional domain name of the bucket, used as the CloudFront origin.
-    distributionId : str, default is Undefined, optional
-        ID of the composed CloudFront distribution.
-    distributionArn : str, default is Undefined, optional
-        ARN of the composed CloudFront distribution.
-    distributionDomainName : str, default is Undefined, optional
-        The distribution's *.cloudfront.net domain name: where the site is served.
-    """
+    errorDocument?: str
+    """Error document (e.g., 404.html)"""
 
-    bucketArn?: str
-    bucketDomainName?: str
-    distributionId?: str
-    distributionArn?: str
-    distributionDomainName?: str
+    enableVersioning: bool = False
+    """Enable S3 versioning"""
 
-# See staticSiteComposition.k for the StaticSite schema definition.
+    # CloudFront configuration
+    cacheTtlSeconds: int = 3600
+    """Default cache TTL for objects"""
+
+    priceClass: str = "PriceClass_100"
+    """CloudFront price class (100, 200, or All)"""
+
+    enableCompressionAutomatically: bool = True
+    """Auto-compress objects with CloudFront"""
+
+    # Security
+    blockPublicAcl: bool = True
+    """Block public ACL on S3 bucket"""
+
+    blockPublicPolicy: bool = True
+    """Block public bucket policies"""
+
+    # Additional tags
+    tags?: {str: str}
+    """Optional tags for all resources"""
