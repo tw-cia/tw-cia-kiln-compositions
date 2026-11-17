@@ -183,3 +183,35 @@ shows the test run failing.
 - `A render-fixtures/staticsite/observed-oac-and-distribution.yaml`
 - `A render-fixtures/staticsite/observed-oac.yaml`
 - `A render-fixtures/staticsite/xr.yaml`
+
+### 5. Composition written to the wrong folder, with examples
+*2026-11-17T13:22:57 UTC*
+
+Session 47a319b5 (2026-11-17, 13:20). Created manifests/staticsite.kcl and
+three supporting files, plus examples/. The composition was not written to
+kcl-scripts/ at all.
+
+Reasoning: the session assumed kcl-scripts/ was empty and not the place to
+build, so it wrote somewhere else.
+
+Challenge: the output went outside the Kiln layout. It is not part of the composition
+that later states build on.
+
+**Tests:** not run: no KCL package at this step
+**Generation:** not run: no kiln.toml yet
+
+**Files changed:**
+- `M examples/README.md`
+- `A examples/staticsite_advanced.kcl`
+- `A examples/staticsite_example.kcl`
+- `D kcl-scripts/staticSite.k`
+- `D kcl-scripts/staticsite_test.k`
+- `A manifests/INDEX.md`
+- `A manifests/STATICSITE.md`
+- `A manifests/staticsite.kcl`
+- `A manifests/staticsite_composition.kcl`
+- `A manifests/staticsite_xrd.kcl`
+- `D render-fixtures/staticsite/observed-distribution.yaml`
+- `D render-fixtures/staticsite/observed-oac-and-distribution.yaml`
+- `D render-fixtures/staticsite/observed-oac.yaml`
+- `D render-fixtures/staticsite/xr.yaml`

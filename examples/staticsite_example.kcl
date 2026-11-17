@@ -1,0 +1,83 @@
+"""
+Example: Creating a static website with the staticsite composition.
+
+This demonstrates how to create a StaticSite composite resource that will
+trigger the composition to create all necessary AWS resources (S3, CloudFront, OAC).
+"""
+
+# Example 1: Minimal configuration - all defaults except bucket name
+minimalBlog = {
+    apiVersion = "platform.demotw.com/v1alpha1"
+    kind = "StaticSite"
+    metadata = {
+        name = "my-blog"
+        namespace = "websites"
+    }
+    spec = {
+        bucketName = "my-blog-static-site-2024"
+    }
+}
+
+# Example 2: Full configuration with custom settings
+docSite = {
+    apiVersion = "platform.demotw.com/v1alpha1"
+    kind = "StaticSite"
+    metadata = {
+        name = "api-docs"
+        namespace = "websites"
+    }
+    spec = {
+        bucketName = "acme-api-docs-prod"
+        indexDocument = "index.html"  # Default, but explicit here
+        region = "eu-west-1"          # Host in Europe
+        priceClass = "PriceClass_100"  # US/EU only (cheapest)
+        tags = {
+            "environment" = "production"
+            "team" = "platform"
+            "cost-center" = "engineering"
+        }
+    }
+}
+
+# Example 3: Regional static site with all regions
+globalSite = {
+    apiVersion = "platform.demotw.com/v1alpha1"
+    kind = "StaticSite"
+    metadata = {
+        name = "marketing-site"
+        namespace = "websites"
+    }
+    spec = {
+        bucketName = "acme-marketing-global-2024"
+        indexDocument = "index.html"
+        region = "us-east-1"           # S3 primary region
+        priceClass = "PriceClass_All"  # All global edge locations
+        tags = {
+            "environment" = "production"
+            "purpose" = "marketing"
+        }
+    }
+}
+
+# Example 4: Development/staging site
+stagingSite = {
+    apiVersion = "platform.demotw.com/v1alpha1"
+    kind = "StaticSite"
+    metadata = {
+        name = "staging-site"
+        namespace = "websites"
+    }
+    spec = {
+        bucketName = "acme-website-staging"
+        indexDocument = "index.html"
+        region = "us-east-1"
+        priceClass = "PriceClass_100"  # Keep costs low for staging
+        tags = {
+            "environment" = "staging"
+            "ephemeral" = "false"
+        }
+    }
+}
+
+# Output all examples
+[minimalBlog, docSite, globalSite, stagingSite]

@@ -1,0 +1,106 @@
+"""
+Advanced: Working with staticsite composition outputs and patterns.
+
+This shows how to use the composition output status values and
+common patterns for managing multiple static sites.
+"""
+
+# Common configuration
+_DEFAULT_TAGS = {
+    "managed-by" = "kiln"
+    "managed-by-version" = "0.1.0"
+}
+
+_PROD_TAGS = _DEFAULT_TAGS | {
+    "environment" = "production"
+}
+
+_STAGING_TAGS = _DEFAULT_TAGS | {
+    "environment" = "staging"
+}
+
+# Pattern 1: Using composition output for DNS/CNAME records
+# After composition creates the site, you'd reference:
+#   - distributionDomainName for CloudFront CNAME targets
+#   - bucketDomainName for direct S3 access (not recommended)
+#   - bucketArn for policies
+
+productionDocs = {
+    apiVersion = "platform.demotw.com/v1alpha1"
+    kind = "StaticSite"
+    metadata.name = "prod-docs"
+    metadata.namespace = "prod"
+    spec = {
+        bucketName = "acme-docs-prod-site"
+        region = "us-east-1"
+        priceClass = "PriceClass_All"
+        tags = _PROD_TAGS
+    }
+}
+
+# Pattern 2: Building a site list with computed properties
+siteConfigs = [
+    {name = "marketing", bucket = "acme-marketing-prod", region = "us-east-1", price = "PriceClass_All"},
+    {name = "docs", bucket = "acme-docs-prod-site", region = "us-east-1", price = "PriceClass_100"},
+    {name = "blog", bucket = "acme-blog-prod", region = "us-east-1", price = "PriceClass_100"},
+]
+
+sites = [
+    {
+        apiVersion = "platform.demotw.com/v1alpha1"
+        kind = "StaticSite"
+        metadata = {
+            name = config.name
+            namespace = "websites"
+        }
+        spec = {
+            bucketName = config.bucket
+            region = config.region
+            priceClass = config.price
+            tags = _PROD_TAGS | {site = config.name}
+        }
+    }
+    for config in siteConfigs
+]
+
+# Pattern 3: Conditional composition based on environment
+_ENV = "production"  # Could come from external config
+
+createSite = lambda name, bucket, env="production" -> any {
+    tags = _DEFAULT_TAGS | {
+        environment = env
+        site = name
+    }
+
+    {
+        apiVersion = "platform.demotw.com/v1alpha1"
+        kind = "StaticSite"
+        metadata = {
+            name = name
+            namespace = if env == "production" then "prod" else "staging"
+        }
+        spec = {
+            bucketName = bucket
+            region = "us-east-1"
+            priceClass = if env == "production" then "PriceClass_All" else "PriceClass_100"
+            tags = tags
+        }
+    }
+}
+
+# Generate sites using the factory
+portfolioSite = createSite("portfolio", "john-doe-portfolio-2024", _ENV)
+resumeSite = createSite("resume", "john-doe-resume-2024", _ENV)
+stagingResumeReview = createSite("resume-review", "john-doe-resume-staging", "staging")
+
+# Pattern 4: Mixing staticsite composition with other resources
+# (Example: Route53 records to point custom domains to CloudFront)
+# In a real scenario, you'd create Route53 ALIAS records pointing to the
+# distributionDomainName from the composition's status output
+
+sites + [
+    productionDocs,
+    portfolioSite,
+    resumeSite,
+    stagingResumeReview,
+]
