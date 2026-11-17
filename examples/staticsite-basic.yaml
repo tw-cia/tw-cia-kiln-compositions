@@ -1,0 +1,17 @@
+apiVersion: example.platform.demotw.com/v1
+kind: StaticSite
+metadata:
+  name: my-website
+  namespace: default
+spec:
+  siteName: my-website
+  domainName: www.example.com
+  alternateNames:
+    - example.com
+  defaultRootObject: index.html
+  enableVersioning: false
+  enableLogging: true
+  viewerProtocolPolicy: redirect-to-https
+  tags:
+    environment: production
+    owner: platform-team

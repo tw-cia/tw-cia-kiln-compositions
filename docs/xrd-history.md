@@ -117,3 +117,34 @@ this is an experiment, not a step towards the final design.
 - `A manifests/example-static-website-claim.yaml`
 - `A manifests/static-website-composition.yaml`
 - `M render-fixtures/staticwebsite/xr.yaml`
+
+### 3. Parallel attempt: examples and a second KCL composition
+*2026-11-17T12:59:37 UTC*
+
+Session 78acdb3e (2026-11-17, 12:52). Another run of the same request in the
+same folder.
+
+What changed: staticSite.k and staticSiteComposition.k, plus examples/
+(README, QUICKSTART, basic and advanced YAML).
+
+Reasoning: documentation-first. The examples were written before the
+composition was checked against anything.
+
+Challenge: the examples describe a shape that the composition does not yet
+produce, so they were later dropped.
+
+**Tests:** not run: no KCL package at this step
+**Generation:** not run: no kiln.toml yet
+
+**Files changed:**
+- `A COMPOSITION.md`
+- `A examples/QUICKSTART.md`
+- `A examples/README.md`
+- `A examples/staticsite-advanced.yaml`
+- `A examples/staticsite-basic.yaml`
+- `M kcl-scripts/schemas_compositions.k`
+- `A kcl-scripts/staticSite.k`
+- `A kcl-scripts/staticSiteComposition.k`
+- `D manifests/STATIC-WEBSITE.md`
+- `D manifests/example-static-website-claim.yaml`
+- `D manifests/static-website-composition.yaml`

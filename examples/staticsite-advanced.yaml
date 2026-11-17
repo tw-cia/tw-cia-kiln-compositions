@@ -1,0 +1,37 @@
+apiVersion: example.platform.demotw.com/v1
+kind: StaticSite
+metadata:
+  name: docs-portal
+  namespace: default
+spec:
+  siteName: docs-portal
+  domainName: docs.internal.example.com
+  alternateNames:
+    - docs.example.com
+    - documentation.example.com
+
+  # S3 Configuration
+  bucketName: company-docs-prod
+  enableVersioning: true
+  enableLogging: true
+  loggingBucket: company-logs-archive
+
+  # Content Configuration
+  defaultRootObject: index.html
+  errorResponses:
+    "403": "error/403.html"
+    "404": "error/404.html"
+    "500": "error/500.html"
+
+  # CloudFront Configuration
+  viewerProtocolPolicy: https-only
+  # Using Managed-CachingOptimized policy (default)
+  cachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+
+  # Resource Tags
+  tags:
+    environment: production
+    tier: critical
+    owner: documentation-team
+    cost-center: engineering
+    backup-policy: daily
