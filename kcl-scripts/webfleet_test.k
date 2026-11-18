@@ -333,3 +333,91 @@ test_webFleet_instance_egress_waits_for_the_instance_security_group = lambda {
 
     assert len(_wfNamed(result, "instance-egress")) == 0, "no instance egress until the instance security group is observed"
 }
+
+_wfOfKind = lambda resources, kind {
+    [r for r in _wfComposed(resources) if r.kind == kind]
+}
+
+_wfScheduledOxr = {
+    apiVersion = "platform.demotw.com/v1alpha1"
+    kind = "WebFleet"
+    metadata = {name = "web-fleet"}
+    spec = {
+        name = "web"
+        vpcId = "vpc-0123456789abcdef0"
+        subnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"]
+        imageId = "ami-0123456789abcdef0"
+        scalingSchedules = [
+            {name = "morning", recurrence = "0 8 * * MON-FRI", timeZone = "Europe/London", minSize = 2, maxSize = 6}
+            {name = "night", recurrence = "0 20 * * *", minSize = 1, maxSize = 2}
+            {name = "burst", recurrence = "0 12 * * SAT", desiredCapacity = 4}
+        ]
+    }
+}
+
+test_webFleet_scaling_schedules_are_absent_by_default = lambda {
+    result = webfleet.composeWebFleet(_wfOxr, _wfStageAll)
+
+    assert len(_wfOfKind(result, "Schedule")) == 0, "no scheduled actions unless the spec asks for them"
+}
+
+test_webFleet_scaling_schedule_is_a_scheduled_action_on_the_fleet_asg = lambda {
+    result = webfleet.composeWebFleet(_wfScheduledOxr, _wfStageAll)
+    sched = _wfNamed(result, "scaling-schedule-morning")[0]
+
+    assert sched.apiVersion == "autoscaling.aws.m.upbound.io/v1beta1"
+    assert sched.kind == "Schedule"
+    assert sched.spec.forProvider.region == "us-east-1"
+    assert sched.spec.forProvider.recurrence == "0 8 * * MON-FRI"
+    assert sched.spec.forProvider.autoscalingGroupNameSelector.matchControllerRef == True, "targets the ASG this fleet composes, found by controller reference"
+}
+
+test_webFleet_scaling_schedule_passes_sizes_and_time_zone = lambda {
+    result = webfleet.composeWebFleet(_wfScheduledOxr, _wfStageAll)
+    sched = _wfNamed(result, "scaling-schedule-morning")[0]
+
+    assert sched.spec.forProvider.minSize == 2
+    assert sched.spec.forProvider.maxSize == 6
+    assert sched.spec.forProvider.timeZone == "Europe/London"
+    assert sched.spec.forProvider.desiredCapacity == -1, "desired capacity not given: AWS leaves it unchanged"
+}
+
+test_webFleet_scaling_schedule_sends_minus_one_for_sizes_left_out = lambda {
+    result = webfleet.composeWebFleet(_wfScheduledOxr, _wfStageAll)
+    night = _wfNamed(result, "scaling-schedule-night")[0]
+
+    assert night.spec.forProvider.desiredCapacity == -1, "AWS defaults an omitted size to 0, so -1 keeps it"
+    assert night.spec.forProvider.minSize == 1
+    assert night.spec.forProvider.maxSize == 2
+    assert not night.spec.forProvider.timeZone, "no time zone given, so none is set"
+}
+
+test_webFleet_scaling_schedule_can_change_only_desired_capacity = lambda {
+    result = webfleet.composeWebFleet(_wfScheduledOxr, _wfStageAll)
+    burst = _wfNamed(result, "scaling-schedule-burst")[0]
+
+    assert burst.spec.forProvider.recurrence == "0 12 * * SAT"
+    assert burst.spec.forProvider.desiredCapacity == 4
+    assert burst.spec.forProvider.minSize == -1, "minimum left unchanged"
+    assert burst.spec.forProvider.maxSize == -1, "maximum left unchanged"
+}
+
+test_webFleet_scaling_schedules_wait_for_the_autoscaling_group = lambda {
+    result = webfleet.composeWebFleet(_wfScheduledOxr, _wfAlbSg | _wfInstanceSg | _wfTargetGroup | _wfLoadBalancer)
+
+    assert len(_wfOfKind(result, "Schedule")) == 0, "no scheduled actions until the ASG is emitted"
+}
+
+test_webFleet_scaling_schedules_add_one_resource_each = lambda {
+    assert len(_wfComposed(webfleet.composeWebFleet(_wfScheduledOxr, _wfStageAll))) == 14, "fully observed: the 11 fleet resources plus one schedule per entry"
+}
+
+test_webFleet_scaling_schedule_spec_accepts_a_size_change = lambda {
+    spec = schemas_compositions.ScalingScheduleSpec {
+        name = "evening"
+        recurrence = "0 18 * * *"
+        minSize = 0
+    }
+
+    assert spec.minSize == 0, "zero is a real size, not a value left out"
+}

@@ -1,0 +1,43 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: cdndistributions.platform.example.com
+spec:
+  group: platform.example.com
+  names:
+    kind: CdnDistribution
+    plural: cdndistributions
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            properties:
+              aliases:
+                items:
+                  type: string
+                type: array
+              certificateArn:
+                type: string
+              hostedZoneId:
+                type: string
+              originDomainName:
+                type: string
+              priceClass:
+                default: PriceClass_100
+                type: string
+            required:
+            - originDomainName
+            type: object
+          status:
+            properties:
+              distributionArn:
+                type: string
+              domainName:
+                type: string
+            type: object

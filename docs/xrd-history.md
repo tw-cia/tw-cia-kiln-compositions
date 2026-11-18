@@ -568,3 +568,37 @@ over HTTP. Revisited later, when the fleet's listener moved to HTTPS.
 - `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
 - `D manifests/crossplane-compositions/webservice/composition.yaml`
 - `D manifests/crossplane-compositions/webservice/xrd.yaml`
+
+### 17. WebFleet scheduled scaling, applied to cia-test
+*2026-11-18T14:08:29 UTC*
+
+Session ccfc76c1 (2026-11-18, 14:04-14:08). The user asked for scaling on a
+schedule. Added scalingSchedules to WebFleet, with each schedule as an
+autoscaling Schedule resource.
+
+What changed: webfleet.k, webfleet_test.k, schemas_compositions.k
+(ScalingScheduleSpec). The XRD and composition were applied to cia-test,
+after a kubectl diff.
+
+Reasoning: a schedule that omits a size should leave that size unchanged.
+AWS treats an omitted size as zero, so the composition sends -1 for an
+omitted size.
+
+Challenge: the existing fleet on the cluster was moved to the new
+composition, which needed a careful apply order.
+
+**Tests:** error[E2G22]: TypeError | error[E2G22]: TypeError | error[E2G22]: TypeError
+**Generation:** ok
+
+**Files changed:**
+- `M kcl-scripts/schemas_compositions.k`
+- `M kcl-scripts/webfleet.k`
+- `M kcl-scripts/webfleet_test.k`
+- `A manifests/crossplane-compositions/cdndistribution/composition.yaml`
+- `A manifests/crossplane-compositions/cdndistribution/xrd.yaml`
+- `D manifests/crossplane-compositions/staticwebsite/composition.yaml`
+- `M manifests/crossplane-compositions/staticwebsite/xrd.yaml`
+- `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
+- `M manifests/crossplane-compositions/tlscertificate/xrd.yaml`
+- `A manifests/crossplane-compositions/webfleet/composition.yaml`
+- `A manifests/crossplane-compositions/webfleet/xrd.yaml`

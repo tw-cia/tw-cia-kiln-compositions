@@ -1,9 +1,9 @@
 apiVersion: apiextensions.crossplane.io/v2
 kind: CompositeResourceDefinition
 metadata:
-  name: staticwebsites.platform.example.com
+  name: staticwebsites.platform.demotw.com
 spec:
-  group: platform.example.com
+  group: platform.demotw.com
   names:
     kind: StaticWebsite
     plural: staticwebsites
@@ -20,23 +20,35 @@ spec:
             properties:
               bucketName:
                 type: string
-              bucketRegion:
-                default: us-east-1
-                type: string
               domainName:
                 type: string
-              hostedZoneId:
+              errorDocument:
                 type: string
               indexDocument:
-                default: index.html
+                type: string
+              providerConfigName:
+                type: string
+              region:
+                type: string
+              tags:
+                additionalProperties:
+                  type: string
+                type: object
+              zoneId:
                 type: string
             required:
             - domainName
-            - hostedZoneId
+            - bucketName
             type: object
           status:
             properties:
+              bucketName:
+                type: string
+              certificateArn:
+                type: string
               distributionDomainName:
+                type: string
+              domainName:
                 type: string
               url:
                 type: string

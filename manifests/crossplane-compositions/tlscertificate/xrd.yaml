@@ -25,10 +25,6 @@ spec:
               region:
                 default: us-east-1
                 type: string
-              subjectAlternativeNames:
-                items:
-                  type: string
-                type: array
             required:
             - domainName
             - hostedZoneId

@@ -30,6 +30,7 @@ composeWebFleet = lambda oxr, ocds -> [any] {
     _imageId = spec.imageId
     _instanceType = spec.instanceType
     _userData = spec.userData
+    _scalingSchedules = spec.scalingSchedules or []
 
     _albSgName = "alb-security-group"
     _instanceSgName = "instance-security-group"
@@ -169,6 +170,19 @@ composeWebFleet = lambda oxr, ocds -> [any] {
         }]
     })] if _launchTemplateId and _targetGroupArn else []
 
+    # One scheduled action per scalingSchedules entry, once the ASG exists. Each one
+    # finds the fleet's own ASG through its controller reference. AWS treats an
+    # omitted size as 0, so a size the consumer left out is sent as -1 (unchanged).
+    _scalingScheduleActions = [awsResource("autoscaling.aws.m.upbound.io/v1beta1", "Schedule", "scaling-schedule-${s.name}", schemas_providers.AutoscalingAwsmUpboundIoV1beta1ScheduleSpecForProvider {
+        region = _region
+        autoscalingGroupNameSelector = {matchControllerRef = True}
+        recurrence = s.recurrence
+        minSize = s.minSize if s.minSize is not Undefined else -1
+        maxSize = s.maxSize if s.maxSize is not Undefined else -1
+        desiredCapacity = s.desiredCapacity if s.desiredCapacity is not Undefined else -1
+        **({"timeZone" = s.timeZone} if s.timeZone else {})
+    }) for s in _scalingSchedules] if _autoScalingGroups else []
+
     _xr = {
         apiVersion = oxr.apiVersion
         kind = oxr.kind
@@ -176,5 +190,5 @@ composeWebFleet = lambda oxr, ocds -> [any] {
         status = schemas_compositions.WebFleetStatus {loadBalancerArn = _lbArn, loadBalancerDnsName = _lbDnsName}
     } if _lbDnsName else None
 
-    [_albSecurityGroup, _instanceSecurityGroup] + _targetGroups + _albIngressRules + _loadBalancers + _launchTemplates + _instanceIngressRules + _albEgressRules + _instanceEgressRules + _listeners + _autoScalingGroups + ([_xr] if _xr else [])
+    [_albSecurityGroup, _instanceSecurityGroup] + _targetGroups + _albIngressRules + _loadBalancers + _launchTemplates + _instanceIngressRules + _albEgressRules + _instanceEgressRules + _listeners + _autoScalingGroups + _scalingScheduleActions + ([_xr] if _xr else [])
 }

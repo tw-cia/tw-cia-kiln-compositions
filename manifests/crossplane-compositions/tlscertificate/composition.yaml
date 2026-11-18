@@ -210,79 +210,44 @@ spec:
 
           # Your composite resource (XR) spec schemas, one per kind, e.g. `schema MyKindSpec:`.
 
-          # A DNS-validated ACM certificate. CloudFront only accepts certificates from us-east-1,
-          # which is the default.
+          # A public TLS certificate for one domain, issued by ACM and validated through
+          # DNS records in a Route 53 hosted zone. CloudFront only accepts certificates
+          # from us-east-1, so keep the default region when the certificate is for a
+          # CdnDistribution.
           schema TlsCertificateSpec:
               domainName: str
               hostedZoneId: str
-              subjectAlternativeNames?: [str]
               region: str = "us-east-1"
 
+          # certificateArn is set once ACM has created the certificate. validated is true
+          # once ACM reports the DNS validation as complete.
           schema TlsCertificateStatus:
               certificateArn?: str
               validated?: bool
 
-          # A static website served by CloudFront from a private S3 bucket, behind a custom domain.
+          # One change to the fleet's size, that AWS applies on a cron schedule. recurrence
+          # is a Unix cron expression, for example "0 8 * * MON-FRI" for 08:00 on weekdays,
+          # and timeZone is an IANA name such as "Europe/London" (UTC when it is left out).
+          # Set at least one of minSize, maxSize or desiredCapacity. A value left out is
+          # not changed at that time.
 
-          # An auto-scaling group of identical instances, built from a launch template.
-          schema AutoScalingGroupSpec:
-              region: str = "us-east-1"
-              imageId: str
-              instanceType: str = "t3.micro"
-              subnetIds: [str]
-              securityGroupIds?: [str]
-              minSize: int = 1
-              maxSize: int = 3
-              desiredCapacity?: int
-              # A plain-text boot script, run by each instance on launch. The function encodes it for AWS.
-              userData?: str
-              check:
-                  minSize <= maxSize, "minSize must not be greater than maxSize"
-                  desiredCapacity == Undefined or (desiredCapacity >= minSize and desiredCapacity <= maxSize), "desiredCapacity must be between minSize and maxSize"
-                  userData == Undefined or len(userData) <= 16384, "userData must be at most 16 KB"
+          # An auto-scaling group of web instances behind an application load balancer.
+          # subnetIds holds the load balancer's subnets, which must be public for an
+          # internet-facing load balancer. instanceSubnetIds holds the instances' subnets;
+          # it defaults to subnetIds, and private subnets with a NAT route are better for
+          # instances, so the bootstrap script can reach the internet.
+          # userData is a plain-text bootstrap script (cloud-init or a shell script); the
+          # launch template receives it base64-encoded, as EC2 requires.
 
-          # An application load balancer serving HTTPS with an existing DNS-validated certificate.
+          # loadBalancerDnsName is what a CdnDistribution uses as its origin.
 
-          # A complete web service: a DNS-validated certificate, an auto-scaling group, a load balancer
-          # serving HTTPS with that certificate, and a DNS alias from the domain to the load balancer.
-          # Everything about a web service except its name: where it runs and what it serves.
-          # WebServiceSpec adds the name, and CdnWebServiceSpec nests one of these as its origin.
-          schema WebServiceSettings:
-              region: str = "us-east-1"
-              vpcId: str
-              # The load balancer is internet-facing, so it takes public subnets.
-              loadBalancerSubnetIds: [str]
-              loadBalancerSecurityGroupIds: [str]
-              # The instances take private subnets with a route out, so they can install software at boot.
-              instanceSubnetIds: [str]
-              instanceSecurityGroupIds: [str]
-              imageId: str
-              instanceType: str = "t3.micro"
-              minSize: int = 1
-              maxSize: int = 3
-              desiredCapacity?: int
-              targetPort: int = 80
-              # A plain-text boot script for each instance. See AutoScalingGroupSpec.
-              userData?: str
-              check:
-                  len(loadBalancerSubnetIds) >= 2, "the load balancer needs at least two subnets"
-                  minSize <= maxSize, "minSize must not be greater than maxSize"
-                  desiredCapacity == Undefined or (desiredCapacity >= minSize and desiredCapacity <= maxSize), "desiredCapacity must be between minSize and maxSize"
-                  userData == Undefined or len(userData) <= 16384, "userData must be at most 16 KB"
-
-          schema WebServiceSpec(WebServiceSettings):
-              domainName: str
-              hostedZoneId: str
-
-          # A web service served through CloudFront. The public name is a CloudFront alias with a us-east-1
-          # certificate. CloudFront reaches the origin, a WebService at originDomainName, over HTTPS.
-          schema CdnWebServiceSpec:
-              domainName: str
-              hostedZoneId: str
-              originDomainName: str
-              origin: WebServiceSettings
-              check:
-                  domainName != originDomainName, "the public name and the origin name must differ"
+          # hostedZoneId is the Route 53 zone that gets an alias record for each alias,
+          # pointing it at the distribution. Without it, the aliases are only set on
+          # CloudFront and nothing resolves them.
+          # A CloudFront distribution in front of an origin (such as the load balancer of
+          # a WebFleet). The origin is reached over HTTP, and viewers are redirected to
+          # HTTPS. Every request is forwarded to the origin, with caching disabled, since
+          # the origin is a dynamic application.
 
           # TlsCertificate: an ACM certificate validated through DNS records in a Route 53
           # hosted zone. Staged by what is observed:
@@ -357,7 +322,7 @@ spec:
               [_certificate] + _validationRecords + _certificateValidations + ([_xr] if _xr else [])
           }
 
-          _kilnSpecFields = ["domainName", "hostedZoneId", "region", "subjectAlternativeNames"]
+          _kilnSpecFields = ["domainName", "hostedZoneId", "region"]
           _kilnObservedXr = option("params").oxr
           _kilnOxr = _kilnObservedXr | {spec = {k: v for k, v in _kilnObservedXr.spec if k in _kilnSpecFields}} if _kilnObservedXr?.spec else _kilnObservedXr
           _kilnProviderConfigRef = {kind = "ClusterProviderConfig", name = "pod-identity"}

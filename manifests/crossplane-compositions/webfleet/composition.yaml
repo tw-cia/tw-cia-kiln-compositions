@@ -1,0 +1,1637 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: webfleet-kcl-first
+spec:
+  compositeTypeRef:
+    apiVersion: platform.example.com/v1alpha1
+    kind: WebFleet
+  mode: Pipeline
+  pipeline:
+  - step: compose
+    functionRef:
+      name: function-kcl
+    input:
+      apiVersion: krm.kcl.dev/v1alpha1
+      kind: KCLInput
+      spec:
+        source: |
+          # Curated provider schemas. `kiln import <crd>` appends here.
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderArnRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderArnSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderBlockDeviceMappingsEbs:
+              deleteOnTermination?: str
+              encrypted?: str
+              iops?: float
+              kmsKeyId?: str
+              kmsKeyIdRef?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderEbsKmsKeyIDRef
+              kmsKeyIdSelector?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderEbsKmsKeyIDSelector
+              snapshotId?: str
+              throughput?: float
+              volumeInitializationRate?: float
+              volumeSize?: float
+              volumeType?: str
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderCapacityReservationSpecificationCapacityReservationTarget:
+              capacityReservationId?: str
+              capacityReservationResourceGroupArn?: str
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderEbsKmsKeyIDRef:
+              name: str
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderKmsKeyIDRefPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderEbsKmsKeyIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderKmsKeyIDSelectorPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderEnaSrdSpecificationEnaSrdUDPSpecification:
+              enaSrdUdpEnabled?: bool
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderBlockDeviceMappings:
+              deviceName?: str
+              ebs?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderBlockDeviceMappingsEbs
+              noDevice?: str
+              virtualName?: str
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderCapacityReservationSpecification:
+              capacityReservationPreference?: str
+              capacityReservationTarget?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderCapacityReservationSpecificationCapacityReservationTarget
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderCPUOptions:
+              amdSevSnp?: str
+              coreCount?: float
+              nestedVirtualization?: str
+              threadsPerCore?: float
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderCreditSpecification:
+              cpuCredits?: str
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderEnclaveOptions:
+              enabled?: bool
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderHibernationOptions:
+              configured?: bool
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderIamInstanceProfile:
+              arn?: str
+              arnRef?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderIamInstanceProfileArnRef
+              arnSelector?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderIamInstanceProfileArnSelector
+              name?: str
+              nameRef?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderIamInstanceProfileNameRef
+              nameSelector?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderIamInstanceProfileNameSelector
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceMarketOptions:
+              marketType?: str
+              spotOptions?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceMarketOptionsSpotOptions
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirements:
+              acceleratorCount?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsAcceleratorCount
+              acceleratorManufacturers?: [str]
+              acceleratorNames?: [str]
+              acceleratorTotalMemoryMib?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsAcceleratorTotalMemoryMib
+              acceleratorTypes?: [str]
+              allowedInstanceTypes?: [str]
+              bareMetal?: str
+              baselineEbsBandwidthMbps?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsBaselineEbsBandwidthMbps
+              burstablePerformance?: str
+              cpuManufacturers?: [str]
+              excludedInstanceTypes?: [str]
+              instanceGenerations?: [str]
+              localStorage?: str
+              localStorageTypes?: [str]
+              maxSpotPriceAsPercentageOfOptimalOnDemandPrice?: float
+              memoryGibPerVcpu?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsMemoryGibPerVcpu
+              memoryMib?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsMemoryMib
+              networkBandwidthGbps?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsNetworkBandwidthGbps
+              networkInterfaceCount?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsNetworkInterfaceCount
+              onDemandMaxPricePercentageOverLowestPrice?: float
+              requireHibernateSupport?: bool
+              spotMaxPricePercentageOverLowestPrice?: float
+              totalLocalStorageGb?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsTotalLocalStorageGb
+              vcpuCount?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsVcpuCount
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderLicenseSpecification:
+              licenseConfigurationArn?: str
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderMaintenanceOptions:
+              autoRecovery?: str
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderMetadataOptions:
+              httpEndpoint?: str
+              httpProtocolIpv6?: str
+              httpPutResponseHopLimit?: float
+              httpTokens?: str
+              instanceMetadataTags?: str
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderMonitoring:
+              enabled?: bool
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfaces:
+              associateCarrierIpAddress?: str
+              associatePublicIpAddress?: str
+              connectionTrackingSpecification?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfacesConnectionTrackingSpecification
+              deleteOnTermination?: str
+              description?: str
+              deviceIndex?: float
+              enaQueueCount?: float
+              enaSrdSpecification?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfacesEnaSrdSpecification
+              interfaceType?: str
+              ipv4AddressCount?: float
+              ipv4Addresses?: [str]
+              ipv4PrefixCount?: float
+              ipv4Prefixes?: [str]
+              ipv6AddressCount?: float
+              ipv6Addresses?: [str]
+              ipv6PrefixCount?: float
+              ipv6Prefixes?: [str]
+              networkCardIndex?: float
+              networkInterfaceId?: str
+              networkInterfaceIdRef?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfacesNetworkInterfaceIDRef
+              networkInterfaceIdSelector?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfacesNetworkInterfaceIDSelector
+              primaryIpv6?: str
+              privateIpAddress?: str
+              securityGroupRefs?: [Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfacesSecurityGroupRefs]
+              securityGroupSelector?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfacesSecurityGroupSelector
+              securityGroups?: [str]
+              subnetId?: str
+              subnetIdRef?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfacesSubnetIDRef
+              subnetIdSelector?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfacesSubnetIDSelector
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkPerformanceOptions:
+              bandwidthWeighting?: str
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderPlacement:
+              affinity?: str
+              availabilityZone?: str
+              groupId?: str
+              groupName?: str
+              hostId?: str
+              hostResourceGroupArn?: str
+              partitionNumber?: float
+              spreadDomain?: str
+              tenancy?: str
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderPrivateDNSNameOptions:
+              enableResourceNameDnsARecord?: bool
+              enableResourceNameDnsAaaaRecord?: bool
+              hostnameType?: str
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSecondaryInterfaces:
+              deleteOnTermination?: bool
+              deviceIndex?: float
+              interfaceType?: str
+              networkCardIndex?: float
+              privateIpAddressCount?: float
+              privateIpAddresses?: [str]
+              secondarySubnetId?: str
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSecurityGroupNameRefs:
+              name: str
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSecurityGroupNameRefsPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSecurityGroupNameSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSecurityGroupNameSelectorPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderTagSpecifications:
+              resourceType?: str
+              tags?: {str:str}
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderVpcSecurityGroupIDRefs:
+              name: str
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderVpcSecurityGroupIDRefsPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderVpcSecurityGroupIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderVpcSecurityGroupIDSelectorPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderIamInstanceProfileArnRef:
+              name: str
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderArnRefPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderIamInstanceProfileArnSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderArnSelectorPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderIamInstanceProfileNameRef:
+              name: str
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNameRefPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderIamInstanceProfileNameSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNameSelectorPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceMarketOptionsSpotOptions:
+              blockDurationMinutes?: float
+              instanceInterruptionBehavior?: str
+              maxPrice?: str
+              spotInstanceType?: str
+              validUntil?: str
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsAcceleratorCount:
+              max?: float
+              min?: float
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsAcceleratorTotalMemoryMib:
+              max?: float
+              min?: float
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsBaselineEbsBandwidthMbps:
+              max?: float
+              min?: float
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsMemoryGibPerVcpu:
+              max?: float
+              min?: float
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsMemoryMib:
+              max?: float
+              min?: float
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsNetworkBandwidthGbps:
+              max?: float
+              min?: float
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsNetworkInterfaceCount:
+              max?: float
+              min?: float
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsTotalLocalStorageGb:
+              max?: float
+              min?: float
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirementsVcpuCount:
+              max?: float
+              min?: float
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderKmsKeyIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderKmsKeyIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNameRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNameSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfaceIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfaceIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfacesConnectionTrackingSpecification:
+              tcpEstablishedTimeout?: float
+              udpStreamTimeout?: float
+              udpTimeout?: float
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfacesEnaSrdSpecification:
+              enaSrdEnabled?: bool
+              enaSrdUdpSpecification?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderEnaSrdSpecificationEnaSrdUDPSpecification
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfacesNetworkInterfaceIDRef:
+              name: str
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfaceIDRefPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfacesNetworkInterfaceIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfaceIDSelectorPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfacesSecurityGroupRefs:
+              name: str
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSecurityGroupRefsPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfacesSecurityGroupSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSecurityGroupSelectorPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfacesSubnetIDRef:
+              name: str
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSubnetIDRefPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfacesSubnetIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSubnetIDSelectorPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSecurityGroupNameRefsPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSecurityGroupNameSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSecurityGroupRefsPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSecurityGroupSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProvider:
+              blockDeviceMappings?: [Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderBlockDeviceMappings]
+              capacityReservationSpecification?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderCapacityReservationSpecification
+              cpuOptions?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderCPUOptions
+              creditSpecification?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderCreditSpecification
+              defaultVersion?: float
+              description?: str
+              disableApiStop?: bool
+              disableApiTermination?: bool
+              ebsOptimized?: str
+              enclaveOptions?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderEnclaveOptions
+              hibernationOptions?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderHibernationOptions
+              iamInstanceProfile?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderIamInstanceProfile
+              imageId?: str
+              instanceInitiatedShutdownBehavior?: str
+              instanceMarketOptions?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceMarketOptions
+              instanceRequirements?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderInstanceRequirements
+              instanceType?: str
+              kernelId?: str
+              keyName?: str
+              licenseSpecification?: [Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderLicenseSpecification]
+              maintenanceOptions?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderMaintenanceOptions
+              metadataOptions?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderMetadataOptions
+              monitoring?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderMonitoring
+              name?: str
+              networkInterfaces?: [Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkInterfaces]
+              networkPerformanceOptions?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderNetworkPerformanceOptions
+              placement?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderPlacement
+              privateDnsNameOptions?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderPrivateDNSNameOptions
+              ramDiskId?: str
+              region: str
+              secondaryInterfaces?: [Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSecondaryInterfaces]
+              securityGroupNameRefs?: [Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSecurityGroupNameRefs]
+              securityGroupNameSelector?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSecurityGroupNameSelector
+              securityGroupNames?: [str]
+              tagSpecifications?: [Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderTagSpecifications]
+              tags?: {str:str}
+              updateDefaultVersion?: bool
+              userData?: str
+              vpcSecurityGroupIdRefs?: [Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderVpcSecurityGroupIDRefs]
+              vpcSecurityGroupIdSelector?: Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderVpcSecurityGroupIDSelector
+              vpcSecurityGroupIds?: [str]
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSubnetIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderSubnetIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderVpcSecurityGroupIDRefsPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProviderVpcSecurityGroupIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupSpecForProviderVpcIDRef:
+              name: str
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1SecurityGroupSpecForProviderVpcIDRefPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupSpecForProviderVpcIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1SecurityGroupSpecForProviderVpcIDSelectorPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupSpecForProvider:
+              description?: str
+              name?: str
+              region: str
+              revokeRulesOnDelete?: bool
+              tags?: {str:str}
+              vpcId?: str
+              vpcIdRef?: Ec2AwsmUpboundIoV1beta1SecurityGroupSpecForProviderVpcIDRef
+              vpcIdSelector?: Ec2AwsmUpboundIoV1beta1SecurityGroupSpecForProviderVpcIDSelector
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupSpecForProviderVpcIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupSpecForProviderVpcIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderCidrBlocksRefsPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderCidrBlocksSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderCidrBlocksRefs:
+              name: str
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderCidrBlocksRefsPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderCidrBlocksSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderCidrBlocksSelectorPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderIPV6CidrBlocksRefs:
+              name: str
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderIPV6CidrBlocksRefsPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderIPV6CidrBlocksSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderIPV6CidrBlocksSelectorPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderPrefixListIDRefs:
+              name: str
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderPrefixListIDRefsPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderPrefixListIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderPrefixListIDSelectorPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderSecurityGroupIDRef:
+              name: str
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderSecurityGroupIDRefPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderSecurityGroupIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderSecurityGroupIDSelectorPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderSourceSecurityGroupIDRef:
+              name: str
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderSourceSecurityGroupIDRefPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderSourceSecurityGroupIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderSourceSecurityGroupIDSelectorPolicy
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderIPV6CidrBlocksRefsPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderIPV6CidrBlocksSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderPrefixListIDRefsPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderPrefixListIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderSecurityGroupIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderSecurityGroupIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderSourceSecurityGroupIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderSourceSecurityGroupIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProvider:
+              cidrBlocks?: [str]
+              cidrBlocksRefs?: [Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderCidrBlocksRefs]
+              cidrBlocksSelector?: Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderCidrBlocksSelector
+              description?: str
+              fromPort?: float
+              ipv6CidrBlocks?: [str]
+              ipv6CidrBlocksRefs?: [Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderIPV6CidrBlocksRefs]
+              ipv6CidrBlocksSelector?: Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderIPV6CidrBlocksSelector
+              prefixListIdRefs?: [Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderPrefixListIDRefs]
+              prefixListIdSelector?: Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderPrefixListIDSelector
+              prefixListIds?: [str]
+              $protocol?: str
+              region: str
+              securityGroupId?: str
+              securityGroupIdRef?: Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderSecurityGroupIDRef
+              securityGroupIdSelector?: Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderSecurityGroupIDSelector
+              self?: bool
+              sourceSecurityGroupId?: str
+              sourceSecurityGroupIdRef?: Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderSourceSecurityGroupIDRef
+              sourceSecurityGroupIdSelector?: Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProviderSourceSecurityGroupIDSelector
+              toPort?: float
+              $type?: str
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderCapacityReservationSpecificationCapacityReservationTarget:
+              capacityReservationIds?: [str]
+              capacityReservationResourceGroupArns?: [str]
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderAvailabilityZoneDistribution:
+              capacityDistributionStrategy?: str
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderCapacityReservationSpecification:
+              capacityReservationPreference?: str
+              capacityReservationTarget?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderCapacityReservationSpecificationCapacityReservationTarget
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInitialLifecycleHook:
+              defaultResult?: str
+              heartbeatTimeout?: float
+              lifecycleTransition?: str
+              name?: str
+              notificationMetadata?: str
+              notificationTargetArn?: str
+              roleArn?: str
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceLifecyclePolicy:
+              retentionTriggers?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceLifecyclePolicyRetentionTriggers
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceMaintenancePolicy:
+              maxHealthyPercentage?: float
+              minHealthyPercentage?: float
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRefresh:
+              preferences?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRefreshPreferences
+              strategy?: str
+              triggers?: [str]
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchConfigurationRef:
+              name: str
+              namespace?: str
+              policy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchConfigurationRefPolicy
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchConfigurationSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchConfigurationSelectorPolicy
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplate:
+              id?: str
+              idRef?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateIDRef
+              idSelector?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateIDSelector
+              name?: str
+              version?: str
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderMixedInstancesPolicy:
+              instancesDistribution?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderMixedInstancesPolicyInstancesDistribution
+              launchTemplate?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderMixedInstancesPolicyLaunchTemplate
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderPlacementGroupRef:
+              name: str
+              namespace?: str
+              policy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderPlacementGroupRefPolicy
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderPlacementGroupSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderPlacementGroupSelectorPolicy
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderServiceLinkedRoleArnRef:
+              name: str
+              namespace?: str
+              policy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderServiceLinkedRoleArnRefPolicy
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderServiceLinkedRoleArnSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderServiceLinkedRoleArnSelectorPolicy
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderTag:
+              key?: str
+              propagateAtLaunch?: bool
+              value?: str
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderTrafficSource:
+              identifier?: str
+              $type?: str
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderVpcZoneIdentifierRefs:
+              name: str
+              namespace?: str
+              policy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderVpcZoneIdentifierRefsPolicy
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderVpcZoneIdentifierSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderVpcZoneIdentifierSelectorPolicy
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderWarmPool:
+              instanceReusePolicy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderWarmPoolInstanceReusePolicy
+              maxGroupPreparedCapacity?: float
+              minSize?: float
+              poolState?: str
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceLifecyclePolicyRetentionTriggers:
+              terminateHookAbandon?: str
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRefreshPreferences:
+              alarmSpecification?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderPreferencesAlarmSpecification
+              autoRollback?: bool
+              checkpointDelay?: str
+              checkpointPercentages?: [float]
+              instanceWarmup?: str
+              maxHealthyPercentage?: float
+              minHealthyPercentage?: float
+              scaleInProtectedInstances?: str
+              skipMatching?: bool
+              standbyInstances?: str
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsAcceleratorCount:
+              max?: float
+              min?: float
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsAcceleratorTotalMemoryMib:
+              max?: float
+              min?: float
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsBaselineEbsBandwidthMbps:
+              max?: float
+              min?: float
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsMemoryGibPerVcpu:
+              max?: float
+              min?: float
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsMemoryMib:
+              max?: float
+              min?: float
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsNetworkBandwidthGbps:
+              max?: float
+              min?: float
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsNetworkInterfaceCount:
+              max?: float
+              min?: float
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsTotalLocalStorageGb:
+              max?: float
+              min?: float
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsVcpuCount:
+              max?: float
+              min?: float
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchConfigurationRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchConfigurationSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateIDRef:
+              name: str
+              namespace?: str
+              policy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderIDRefPolicy
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderIDSelectorPolicy
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateLaunchTemplateSpecification:
+              launchTemplateId?: str
+              launchTemplateIdRef?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateSpecificationLaunchTemplateIDRef
+              launchTemplateIdSelector?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateSpecificationLaunchTemplateIDSelector
+              launchTemplateName?: str
+              version?: str
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateOverride:
+              instanceRequirements?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderOverrideInstanceRequirements
+              instanceType?: str
+              launchTemplateSpecification?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderOverrideLaunchTemplateSpecification
+              weightedCapacity?: str
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateSpecificationLaunchTemplateIDRef:
+              name: str
+              namespace?: str
+              policy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateIDRefPolicy
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateSpecificationLaunchTemplateIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateSpecificationLaunchTemplateIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateIDSelectorPolicy
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateSpecificationLaunchTemplateIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderMixedInstancesPolicyInstancesDistribution:
+              onDemandAllocationStrategy?: str
+              onDemandBaseCapacity?: float
+              onDemandPercentageAboveBaseCapacity?: float
+              spotAllocationStrategy?: str
+              spotInstancePools?: float
+              spotMaxPrice?: str
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderMixedInstancesPolicyLaunchTemplate:
+              launchTemplateSpecification?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateLaunchTemplateSpecification
+              override?: [AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateOverride]
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderOverrideInstanceRequirements:
+              acceleratorCount?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsAcceleratorCount
+              acceleratorManufacturers?: [str]
+              acceleratorNames?: [str]
+              acceleratorTotalMemoryMib?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsAcceleratorTotalMemoryMib
+              acceleratorTypes?: [str]
+              allowedInstanceTypes?: [str]
+              bareMetal?: str
+              baselineEbsBandwidthMbps?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsBaselineEbsBandwidthMbps
+              burstablePerformance?: str
+              cpuManufacturers?: [str]
+              excludedInstanceTypes?: [str]
+              instanceGenerations?: [str]
+              localStorage?: str
+              localStorageTypes?: [str]
+              maxSpotPriceAsPercentageOfOptimalOnDemandPrice?: float
+              memoryGibPerVcpu?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsMemoryGibPerVcpu
+              memoryMib?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsMemoryMib
+              networkBandwidthGbps?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsNetworkBandwidthGbps
+              networkInterfaceCount?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsNetworkInterfaceCount
+              onDemandMaxPricePercentageOverLowestPrice?: float
+              requireHibernateSupport?: bool
+              spotMaxPricePercentageOverLowestPrice?: float
+              totalLocalStorageGb?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsTotalLocalStorageGb
+              vcpuCount?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRequirementsVcpuCount
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderOverrideLaunchTemplateSpecification:
+              launchTemplateId?: str
+              launchTemplateIdRef?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderOverrideLaunchTemplateSpecificationLaunchTemplateIDRef
+              launchTemplateIdSelector?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderOverrideLaunchTemplateSpecificationLaunchTemplateIDSelector
+              launchTemplateName?: str
+              version?: str
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderOverrideLaunchTemplateSpecificationLaunchTemplateIDRef:
+              name: str
+              namespace?: str
+              policy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateSpecificationLaunchTemplateIDRefPolicy
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderOverrideLaunchTemplateSpecificationLaunchTemplateIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplateSpecificationLaunchTemplateIDSelectorPolicy
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderPlacementGroupRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderPlacementGroupSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderPreferencesAlarmSpecification:
+              alarms?: [str]
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderServiceLinkedRoleArnRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderServiceLinkedRoleArnSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProvider:
+              availabilityZoneDistribution?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderAvailabilityZoneDistribution
+              availabilityZones?: [str]
+              capacityRebalance?: bool
+              capacityReservationSpecification?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderCapacityReservationSpecification
+              context?: str
+              defaultCooldown?: float
+              defaultInstanceWarmup?: float
+              desiredCapacity?: float
+              desiredCapacityType?: str
+              enabledMetrics?: [str]
+              forceDelete?: bool
+              forceDeleteWarmPool?: bool
+              healthCheckGracePeriod?: float
+              healthCheckType?: str
+              ignoreFailedScalingActivities?: bool
+              initialLifecycleHook?: [AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInitialLifecycleHook]
+              instanceLifecyclePolicy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceLifecyclePolicy
+              instanceMaintenancePolicy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceMaintenancePolicy
+              instanceRefresh?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderInstanceRefresh
+              launchConfiguration?: str
+              launchConfigurationRef?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchConfigurationRef
+              launchConfigurationSelector?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchConfigurationSelector
+              launchTemplate?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplate
+              maxInstanceLifetime?: float
+              maxSize?: float
+              metricsGranularity?: str
+              minElbCapacity?: float
+              minSize?: float
+              mixedInstancesPolicy?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderMixedInstancesPolicy
+              placementGroup?: str
+              placementGroupRef?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderPlacementGroupRef
+              placementGroupSelector?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderPlacementGroupSelector
+              protectFromScaleIn?: bool
+              region: str
+              serviceLinkedRoleArn?: str
+              serviceLinkedRoleArnRef?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderServiceLinkedRoleArnRef
+              serviceLinkedRoleArnSelector?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderServiceLinkedRoleArnSelector
+              suspendedProcesses?: [str]
+              tag?: [AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderTag]
+              terminationPolicies?: [str]
+              trafficSource?: [AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderTrafficSource]
+              vpcZoneIdentifier?: [str]
+              vpcZoneIdentifierRefs?: [AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderVpcZoneIdentifierRefs]
+              vpcZoneIdentifierSelector?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderVpcZoneIdentifierSelector
+              waitForCapacityTimeout?: str
+              waitForElbCapacity?: float
+              warmPool?: AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderWarmPool
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderVpcZoneIdentifierRefsPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderVpcZoneIdentifierSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderWarmPoolInstanceReusePolicy:
+              reuseOnScaleIn?: bool
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderAccessLogsBucketRef:
+              name: str
+              namespace?: str
+              policy?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderBucketRefPolicy
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderAccessLogsBucketSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderBucketSelectorPolicy
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderBucketRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderBucketSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderAccessLogs:
+              bucket?: str
+              bucketRef?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderAccessLogsBucketRef
+              bucketSelector?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderAccessLogsBucketSelector
+              enabled?: bool
+              prefix?: str
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderConnectionLogs:
+              bucket?: str
+              enabled?: bool
+              prefix?: str
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderHealthCheckLogs:
+              bucket?: str
+              enabled?: bool
+              prefix?: str
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderIpamPools:
+              ipv4IpamPoolId?: str
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderMinimumLoadBalancerCapacity:
+              capacityUnits?: float
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSecurityGroupRefs:
+              name: str
+              namespace?: str
+              policy?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSecurityGroupRefsPolicy
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSecurityGroupSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSecurityGroupSelectorPolicy
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetMapping:
+              allocationId?: str
+              ipv6Address?: str
+              privateIpv4Address?: str
+              subnetId?: str
+              subnetIdRef?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetMappingSubnetIDRef
+              subnetIdSelector?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetMappingSubnetIDSelector
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetRefs:
+              name: str
+              namespace?: str
+              policy?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetRefsPolicy
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetSelectorPolicy
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSecurityGroupRefsPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSecurityGroupSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProvider:
+              accessLogs?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderAccessLogs
+              clientKeepAlive?: float
+              connectionLogs?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderConnectionLogs
+              customerOwnedIpv4Pool?: str
+              desyncMitigationMode?: str
+              dnsRecordClientRoutingPolicy?: str
+              dropInvalidHeaderFields?: bool
+              enableCrossZoneLoadBalancing?: bool
+              enableDeletionProtection?: bool
+              enableHttp2?: bool
+              enablePrefixForIpv6SourceNat?: str
+              enableTlsVersionAndCipherSuiteHeaders?: bool
+              enableWafFailOpen?: bool
+              enableXffClientPort?: bool
+              enableZonalShift?: bool
+              enforceSecurityGroupInboundRulesOnPrivateLinkTraffic?: str
+              healthCheckLogs?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderHealthCheckLogs
+              idleTimeout?: float
+              internal?: bool
+              ipAddressType?: str
+              ipamPools?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderIpamPools
+              loadBalancerType?: str
+              minimumLoadBalancerCapacity?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderMinimumLoadBalancerCapacity
+              name?: str
+              preserveHostHeader?: bool
+              region: str
+              secondaryIpsAutoAssignedPerSubnet?: float
+              securityGroupRefs?: [Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSecurityGroupRefs]
+              securityGroupSelector?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSecurityGroupSelector
+              securityGroups?: [str]
+              subnetMapping?: [Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetMapping]
+              subnetRefs?: [Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetRefs]
+              subnetSelector?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetSelector
+              subnets?: [str]
+              tags?: {str:str}
+              xffHeaderProcessingMode?: str
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetMappingSubnetIDRef:
+              name: str
+              namespace?: str
+              policy?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetIDRefPolicy
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetMappingSubnetIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetIDSelectorPolicy
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetRefsPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Elbv2AwsmUpboundIoV1beta1LBSpecForProviderSubnetSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderHealthCheck:
+              enabled?: bool
+              healthyThreshold?: float
+              interval?: float
+              matcher?: str
+              path?: str
+              port?: str
+              $protocol?: str
+              timeout?: float
+              unhealthyThreshold?: float
+
+          schema Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderStickiness:
+              cookieDuration?: float
+              cookieName?: str
+              enabled?: bool
+              $type?: str
+
+          schema Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderTargetFailover:
+              onDeregistration?: str
+              onUnhealthy?: str
+
+          schema Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderTargetGroupHealth:
+              dnsFailover?: Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderTargetGroupHealthDNSFailover
+              unhealthyStateRouting?: Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderTargetGroupHealthUnhealthyStateRouting
+
+          schema Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderTargetHealthState:
+              enableUnhealthyConnectionTermination?: bool
+              unhealthyDrainingInterval?: float
+
+          schema Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderVpcIDRef:
+              name: str
+              namespace?: str
+              policy?: Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderVpcIDRefPolicy
+
+          schema Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderVpcIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderVpcIDSelectorPolicy
+
+          schema Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProvider:
+              connectionTermination?: bool
+              deregistrationDelay?: str
+              healthCheck?: Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderHealthCheck
+              ipAddressType?: str
+              lambdaMultiValueHeadersEnabled?: bool
+              loadBalancingAlgorithmType?: str
+              loadBalancingAnomalyMitigation?: str
+              loadBalancingCrossZoneEnabled?: str
+              name?: str
+              port?: float
+              preserveClientIp?: str
+              $protocol?: str
+              protocolVersion?: str
+              proxyProtocolV2?: bool
+              region: str
+              slowStart?: float
+              stickiness?: Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderStickiness
+              tags?: {str:str}
+              targetControlPort?: float
+              targetFailover?: [Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderTargetFailover]
+              targetGroupHealth?: Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderTargetGroupHealth
+              targetHealthState?: [Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderTargetHealthState]
+              targetType?: str
+              vpcId?: str
+              vpcIdRef?: Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderVpcIDRef
+              vpcIdSelector?: Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderVpcIDSelector
+
+          schema Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderTargetGroupHealthDNSFailover:
+              minimumHealthyTargetsCount?: str
+              minimumHealthyTargetsPercentage?: str
+
+          schema Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderTargetGroupHealthUnhealthyStateRouting:
+              minimumHealthyTargetsCount?: float
+              minimumHealthyTargetsPercentage?: str
+
+          schema Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderVpcIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProviderVpcIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderArnRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderArnSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderAuthenticateOidcClientSecretSecretRef:
+              key: str
+              name: str
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionAuthenticateCognito:
+              authenticationRequestExtraParams?: {str:str}
+              onUnauthenticatedRequest?: str
+              scope?: str
+              sessionCookieName?: str
+              sessionTimeout?: float
+              userPoolArn?: str
+              userPoolClientId?: str
+              userPoolDomain?: str
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionAuthenticateOidc:
+              authenticationRequestExtraParams?: {str:str}
+              authorizationEndpoint?: str
+              clientId?: str
+              clientSecretSecretRef?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderAuthenticateOidcClientSecretSecretRef
+              issuer?: str
+              onUnauthenticatedRequest?: str
+              scope?: str
+              sessionCookieName?: str
+              sessionTimeout?: float
+              tokenEndpoint?: str
+              userInfoEndpoint?: str
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionFixedResponse:
+              contentType?: str
+              messageBody?: str
+              statusCode?: str
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionForward:
+              stickiness?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderForwardStickiness
+              targetGroup?: [Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderForwardTargetGroup]
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionJwtValidation:
+              additionalClaim?: [Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderJwtValidationAdditionalClaim]
+              issuer?: str
+              jwksEndpoint?: str
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionRedirect:
+              host?: str
+              path?: str
+              port?: str
+              $protocol?: str
+              query?: str
+              statusCode?: str
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionTargetGroupArnRef:
+              name: str
+              namespace?: str
+              policy?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderTargetGroupArnRefPolicy
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionTargetGroupArnSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderTargetGroupArnSelectorPolicy
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultAction:
+              authenticateCognito?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionAuthenticateCognito
+              authenticateOidc?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionAuthenticateOidc
+              fixedResponse?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionFixedResponse
+              forward?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionForward
+              index?: str = "default"
+              jwtValidation?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionJwtValidation
+              order?: float
+              redirect?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionRedirect
+              targetGroupArn?: str
+              targetGroupArnRef?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionTargetGroupArnRef
+              targetGroupArnSelector?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionTargetGroupArnSelector
+              $type?: str
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderLoadBalancerArnRef:
+              name: str
+              namespace?: str
+              policy?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderLoadBalancerArnRefPolicy
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderLoadBalancerArnSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderLoadBalancerArnSelectorPolicy
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderMutualAuthentication:
+              advertiseTrustStoreCaNames?: str
+              ignoreClientCertificateExpiry?: bool
+              mode?: str
+              trustStoreArn?: str
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderForwardStickiness:
+              duration?: float
+              enabled?: bool
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderForwardTargetGroup:
+              arn?: str
+              arnRef?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderTargetGroupArnRef
+              arnSelector?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderTargetGroupArnSelector
+              weight?: float
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderJwtValidationAdditionalClaim:
+              format?: str
+              name?: str
+              values?: [str]
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderLoadBalancerArnRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderLoadBalancerArnSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProvider:
+              alpnPolicy?: str
+              certificateArn?: str
+              defaultAction?: [Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultAction]
+              loadBalancerArn?: str
+              loadBalancerArnRef?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderLoadBalancerArnRef
+              loadBalancerArnSelector?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderLoadBalancerArnSelector
+              mutualAuthentication?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderMutualAuthentication
+              port?: float
+              $protocol?: str
+              region: str
+              routingHttpRequestXAmznMtlsClientcertHeaderName?: str
+              routingHttpRequestXAmznMtlsClientcertIssuerHeaderName?: str
+              routingHttpRequestXAmznMtlsClientcertLeafHeaderName?: str
+              routingHttpRequestXAmznMtlsClientcertSerialNumberHeaderName?: str
+              routingHttpRequestXAmznMtlsClientcertSubjectHeaderName?: str
+              routingHttpRequestXAmznMtlsClientcertValidityHeaderName?: str
+              routingHttpRequestXAmznTlsCipherSuiteHeaderName?: str
+              routingHttpRequestXAmznTlsVersionHeaderName?: str
+              routingHttpResponseAccessControlAllowCredentialsHeaderValue?: str
+              routingHttpResponseAccessControlAllowHeadersHeaderValue?: str
+              routingHttpResponseAccessControlAllowMethodsHeaderValue?: str
+              routingHttpResponseAccessControlAllowOriginHeaderValue?: str
+              routingHttpResponseAccessControlExposeHeadersHeaderValue?: str
+              routingHttpResponseAccessControlMaxAgeHeaderValue?: str
+              routingHttpResponseContentSecurityPolicyHeaderValue?: str
+              routingHttpResponseServerEnabled?: bool
+              routingHttpResponseStrictTransportSecurityHeaderValue?: str
+              routingHttpResponseXContentTypeOptionsHeaderValue?: str
+              routingHttpResponseXFrameOptionsHeaderValue?: str
+              sslPolicy?: str
+              tags?: {str:str}
+              tcpIdleTimeoutSeconds?: float
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderTargetGroupArnRef:
+              name: str
+              namespace?: str
+              policy?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderArnRefPolicy
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderTargetGroupArnRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderTargetGroupArnSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderArnSelectorPolicy
+
+          schema Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderTargetGroupArnSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AutoscalingAwsmUpboundIoV1beta1ScheduleSpecForProviderAutoscalingGroupNameRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AutoscalingAwsmUpboundIoV1beta1ScheduleSpecForProviderAutoscalingGroupNameSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AutoscalingAwsmUpboundIoV1beta1ScheduleSpecForProviderAutoscalingGroupNameRef:
+              name: str
+              namespace?: str
+              policy?: AutoscalingAwsmUpboundIoV1beta1ScheduleSpecForProviderAutoscalingGroupNameRefPolicy
+
+          schema AutoscalingAwsmUpboundIoV1beta1ScheduleSpecForProviderAutoscalingGroupNameSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: AutoscalingAwsmUpboundIoV1beta1ScheduleSpecForProviderAutoscalingGroupNameSelectorPolicy
+
+          schema AutoscalingAwsmUpboundIoV1beta1ScheduleSpecForProvider:
+              autoscalingGroupName?: str
+              autoscalingGroupNameRef?: AutoscalingAwsmUpboundIoV1beta1ScheduleSpecForProviderAutoscalingGroupNameRef
+              autoscalingGroupNameSelector?: AutoscalingAwsmUpboundIoV1beta1ScheduleSpecForProviderAutoscalingGroupNameSelector
+              desiredCapacity?: float
+              endTime?: str
+              maxSize?: float
+              minSize?: float
+              recurrence?: str
+              region: str
+              startTime?: str
+              timeZone?: str
+
+          # Your composite resource (XR) spec schemas, one per kind, e.g. `schema MyKindSpec:`.
+
+          # A public TLS certificate for one domain, issued by ACM and validated through
+          # DNS records in a Route 53 hosted zone. CloudFront only accepts certificates
+          # from us-east-1, so keep the default region when the certificate is for a
+          # CdnDistribution.
+
+          # certificateArn is set once ACM has created the certificate. validated is true
+          # once ACM reports the DNS validation as complete.
+
+          # One change to the fleet's size, that AWS applies on a cron schedule. recurrence
+          # is a Unix cron expression, for example "0 8 * * MON-FRI" for 08:00 on weekdays,
+          # and timeZone is an IANA name such as "Europe/London" (UTC when it is left out).
+          # Set at least one of minSize, maxSize or desiredCapacity. A value left out is
+          # not changed at that time.
+          schema ScalingScheduleSpec:
+              name: str
+              recurrence: str
+              timeZone?: str
+              minSize?: int
+              maxSize?: int
+              desiredCapacity?: int
+              check:
+                  minSize is not Undefined or maxSize is not Undefined or desiredCapacity is not Undefined, "a scaling schedule must set minSize, maxSize or desiredCapacity"
+
+          # An auto-scaling group of web instances behind an application load balancer.
+          # subnetIds holds the load balancer's subnets, which must be public for an
+          # internet-facing load balancer. instanceSubnetIds holds the instances' subnets;
+          # it defaults to subnetIds, and private subnets with a NAT route are better for
+          # instances, so the bootstrap script can reach the internet.
+          # userData is a plain-text bootstrap script (cloud-init or a shell script); the
+          # launch template receives it base64-encoded, as EC2 requires.
+          schema WebFleetSpec:
+              name: str
+              region: str = "us-east-1"
+              vpcId: str
+              subnetIds: [str]
+              instanceSubnetIds?: [str]
+              imageId: str
+              instanceType: str = "t3.micro"
+              port: int = 80
+              healthCheckPath: str = "/"
+              minSize: int = 1
+              maxSize: int = 2
+              userData?: str
+              scalingSchedules?: [ScalingScheduleSpec]
+              check:
+                  len(subnetIds) >= 2, "subnetIds needs at least two subnets, in different zones, for the load balancer"
+                  minSize <= maxSize, "minSize must not be greater than maxSize"
+
+          # loadBalancerDnsName is what a CdnDistribution uses as its origin.
+          schema WebFleetStatus:
+              loadBalancerArn?: str
+              loadBalancerDnsName?: str
+
+          # hostedZoneId is the Route 53 zone that gets an alias record for each alias,
+          # pointing it at the distribution. Without it, the aliases are only set on
+          # CloudFront and nothing resolves them.
+          # A CloudFront distribution in front of an origin (such as the load balancer of
+          # a WebFleet). The origin is reached over HTTP, and viewers are redirected to
+          # HTTPS. Every request is forwarded to the origin, with caching disabled, since
+          # the origin is a dynamic application.
+
+          import base64
+          # WebFleet: an auto-scaling group of web instances behind an application load
+          # balancer. Each resource waits for the observed values it needs, so the
+          # function is staged the same way as the cluster reports them.
+          awsResource = lambda apiVersion, kind, name, forProvider -> {str:any} {
+              {
+                  apiVersion = apiVersion
+                  kind = kind
+                  metadata.annotations = {"krm.kcl.dev/composition-resource-name" = name}
+                  spec.forProvider = forProvider
+              }
+          }
+
+          composeWebFleet = lambda oxr, ocds -> [any] {
+              spec: WebFleetSpec = oxr.spec
+
+              # Bind XR values to locals before building resource dicts (see kcl-primer).
+              _name = spec.name
+              _region = spec.region
+              _vpcId = spec.vpcId
+              _subnetIds = spec.subnetIds
+              _instanceSubnetIds = spec.instanceSubnetIds or spec.subnetIds
+              _port = spec.port
+              _healthCheckPath = spec.healthCheckPath
+              _minSize = spec.minSize
+              _maxSize = spec.maxSize
+              _imageId = spec.imageId
+              _instanceType = spec.instanceType
+              _userData = spec.userData
+              _scalingSchedules = spec.scalingSchedules or []
+
+              _albSgName = "alb-security-group"
+              _instanceSgName = "instance-security-group"
+              _albIngressName = "alb-ingress"
+              _instanceIngressName = "instance-ingress"
+              _albEgressName = "alb-egress"
+              _instanceEgressName = "instance-egress"
+              _launchTemplateName = "launch-template"
+              _loadBalancerName = "load-balancer"
+              _targetGroupName = "target-group"
+              _listenerName = "listener"
+              _autoScalingGroupName = "autoscaling-group"
+
+              _albSgId = ocds[_albSgName]?.Resource?.status?.atProvider?.id
+              _instanceSgId = ocds[_instanceSgName]?.Resource?.status?.atProvider?.id
+              _targetGroupArn = ocds[_targetGroupName]?.Resource?.status?.atProvider?.arn
+              _lbAtProvider = ocds[_loadBalancerName]?.Resource?.status?.atProvider
+              _lbArn = _lbAtProvider?.arn
+              _lbDnsName = _lbAtProvider?.dnsName
+              _launchTemplateId = ocds[_launchTemplateName]?.Resource?.status?.atProvider?.id
+
+              # Ungated: these two security groups are the first things created.
+              _albSecurityGroupForProvider: Ec2AwsmUpboundIoV1beta1SecurityGroupSpecForProvider = {
+                  name = "${_name}-alb"
+                  description = "Load balancer for ${_name}"
+                  vpcId = _vpcId
+                  region = _region
+              }
+              _albSecurityGroup = awsResource("ec2.aws.m.upbound.io/v1beta1", "SecurityGroup", _albSgName, _albSecurityGroupForProvider)
+
+              _instanceSecurityGroupForProvider: Ec2AwsmUpboundIoV1beta1SecurityGroupSpecForProvider = {
+                  name = "${_name}-instances"
+                  description = "Instances of ${_name}"
+                  vpcId = _vpcId
+                  region = _region
+              }
+              _instanceSecurityGroup = awsResource("ec2.aws.m.upbound.io/v1beta1", "SecurityGroup", _instanceSgName, _instanceSecurityGroupForProvider)
+
+              # Ungated: the target group needs only the VPC and the port.
+              _targetGroups = [awsResource("elbv2.aws.m.upbound.io/v1beta1", "LBTargetGroup", _targetGroupName, Elbv2AwsmUpboundIoV1beta1LBTargetGroupSpecForProvider {
+                  name = _name
+                  region = _region
+                  vpcId = _vpcId
+                  port = _port
+                  $protocol = "HTTP"
+                  targetType = "instance"
+                  healthCheck = {path = _healthCheckPath}
+              })]
+
+              _albIngressRules = [awsResource("ec2.aws.m.upbound.io/v1beta1", "SecurityGroupRule", _albIngressName, Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProvider {
+                  region = _region
+                  securityGroupId = _albSgId
+                  $type = "ingress"
+                  $protocol = "tcp"
+                  fromPort = 80
+                  toPort = 80
+                  cidrBlocks = ["0.0.0.0/0"]
+              })] if _albSgId else []
+
+              _loadBalancers = [awsResource("elbv2.aws.m.upbound.io/v1beta1", "LB", _loadBalancerName, Elbv2AwsmUpboundIoV1beta1LBSpecForProvider {
+                  name = _name
+                  region = _region
+                  loadBalancerType = "application"
+                  internal = False
+                  subnets = _subnetIds
+                  securityGroups = [_albSgId]
+              })] if _albSgId else []
+
+              # The user data script is base64-encoded, as the launch template requires.
+              # The key is left out entirely when no script is given.
+              _launchTemplates = [awsResource("ec2.aws.m.upbound.io/v1beta1", "LaunchTemplate", _launchTemplateName, Ec2AwsmUpboundIoV1beta1LaunchTemplateSpecForProvider {
+                  name = _name
+                  region = _region
+                  imageId = _imageId
+                  instanceType = _instanceType
+                  vpcSecurityGroupIds = [_instanceSgId]
+                  **({"userData" = base64.encode(_userData)} if _userData else {})
+              })] if _instanceSgId else []
+
+              _instanceIngressRules = [awsResource("ec2.aws.m.upbound.io/v1beta1", "SecurityGroupRule", _instanceIngressName, Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProvider {
+                  region = _region
+                  securityGroupId = _instanceSgId
+                  sourceSecurityGroupId = _albSgId
+                  $type = "ingress"
+                  $protocol = "tcp"
+                  fromPort = _port
+                  toPort = _port
+              })] if _albSgId and _instanceSgId else []
+
+              # Security groups created without egress rules have none: the provider does
+              # not keep AWS's default allow-all outbound rule. Both groups need explicit egress.
+              _albEgressRules = [awsResource("ec2.aws.m.upbound.io/v1beta1", "SecurityGroupRule", _albEgressName, Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProvider {
+                  region = _region
+                  securityGroupId = _albSgId
+                  sourceSecurityGroupId = _instanceSgId
+                  $type = "egress"
+                  $protocol = "tcp"
+                  fromPort = _port
+                  toPort = _port
+              })] if _albSgId and _instanceSgId else []
+
+              _instanceEgressRules = [awsResource("ec2.aws.m.upbound.io/v1beta1", "SecurityGroupRule", _instanceEgressName, Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProvider {
+                  region = _region
+                  securityGroupId = _instanceSgId
+                  $type = "egress"
+                  $protocol = "-1"
+                  fromPort = 0
+                  toPort = 0
+                  cidrBlocks = ["0.0.0.0/0"]
+              })] if _instanceSgId else []
+
+              _listeners = [awsResource("elbv2.aws.m.upbound.io/v1beta1", "LBListener", _listenerName, Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProvider {
+                  region = _region
+                  loadBalancerArn = _lbArn
+                  port = 80
+                  $protocol = "HTTP"
+                  defaultAction = [Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultAction {
+                      $type = "forward"
+                      targetGroupArn = _targetGroupArn
+                  }]
+              })] if _lbArn and _targetGroupArn else []
+
+              _autoScalingGroups = [awsResource("autoscaling.aws.m.upbound.io/v1beta1", "AutoscalingGroup", _autoScalingGroupName, AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProvider {
+                  region = _region
+                  vpcZoneIdentifier = _instanceSubnetIds
+                  minSize = _minSize
+                  maxSize = _maxSize
+                  healthCheckType = "ELB"
+                  healthCheckGracePeriod = 300
+                  launchTemplate = AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderLaunchTemplate {
+                      id = _launchTemplateId
+                      version = "$Latest"
+                  }
+                  trafficSource = [AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProviderTrafficSource {
+                      identifier = _targetGroupArn
+                      $type = "elbv2"
+                  }]
+              })] if _launchTemplateId and _targetGroupArn else []
+
+              # One scheduled action per scalingSchedules entry, once the ASG exists. Each one
+              # finds the fleet's own ASG through its controller reference. AWS treats an
+              # omitted size as 0, so a size the consumer left out is sent as -1 (unchanged).
+              _scalingScheduleActions = [awsResource("autoscaling.aws.m.upbound.io/v1beta1", "Schedule", "scaling-schedule-${s.name}", AutoscalingAwsmUpboundIoV1beta1ScheduleSpecForProvider {
+                  region = _region
+                  autoscalingGroupNameSelector = {matchControllerRef = True}
+                  recurrence = s.recurrence
+                  minSize = s.minSize if s.minSize is not Undefined else -1
+                  maxSize = s.maxSize if s.maxSize is not Undefined else -1
+                  desiredCapacity = s.desiredCapacity if s.desiredCapacity is not Undefined else -1
+                  **({"timeZone" = s.timeZone} if s.timeZone else {})
+              }) for s in _scalingSchedules] if _autoScalingGroups else []
+
+              _xr = {
+                  apiVersion = oxr.apiVersion
+                  kind = oxr.kind
+                  metadata = oxr.metadata
+                  status = WebFleetStatus {loadBalancerArn = _lbArn, loadBalancerDnsName = _lbDnsName}
+              } if _lbDnsName else None
+
+              [_albSecurityGroup, _instanceSecurityGroup] + _targetGroups + _albIngressRules + _loadBalancers + _launchTemplates + _instanceIngressRules + _albEgressRules + _instanceEgressRules + _listeners + _autoScalingGroups + _scalingScheduleActions + ([_xr] if _xr else [])
+          }
+
+          _kilnSpecFields = ["healthCheckPath", "imageId", "instanceSubnetIds", "instanceType", "maxSize", "minSize", "name", "port", "region", "scalingSchedules", "subnetIds", "userData", "vpcId"]
+          _kilnObservedXr = option("params").oxr
+          _kilnOxr = _kilnObservedXr | {spec = {k: v for k, v in _kilnObservedXr.spec if k in _kilnSpecFields}} if _kilnObservedXr?.spec else _kilnObservedXr
+          _kilnProviderConfigRef = {kind = "ClusterProviderConfig", name = "pod-identity"}
+          _kilnIsManaged = lambda r: any -> bool {
+              "forProvider" in (r?.spec or {}) and not (r?.apiVersion or "").startswith("platform.example.com/")
+          }
+          _kilnWithProviderConfig = lambda r: any -> any {
+              r | {spec.providerConfigRef = _kilnProviderConfigRef} if _kilnIsManaged(r) and not r?.spec?.providerConfigRef else r
+          }
+          items = [_kilnWithProviderConfig(r) for r in composeWebFleet(_kilnOxr, option("params").ocds)]
+  - step: auto-ready
+    functionRef:
+      name: function-auto-ready
