@@ -303,14 +303,19 @@ spec:
           # webFleetDnsNames maps each web fleet's application name to its load balancer's
           # DNS name, for the fleets whose load balancer exists.
 
-          # A static website: files in a private S3 bucket, served over HTTPS at domainName
-          # by a CloudFront distribution. Only that distribution may read the bucket, through
-          # an origin access control. The certificate is a TlsCertificate for domainName,
-          # validated by DNS in hostedZoneId, and the domain gets an alias record to the
-          # distribution. bucketName must be unique across all of AWS.
+          # The address a static website is served at: name is the domain (such as
+          # docs.example.com), and hostedZoneId is the Route 53 zone that holds it. The zone
+          # gets the certificate's validation records and an alias to the distribution.
 
-          # distributionDomainName is the CloudFront address (such as d111111abcdef8.cloudfront.net)
-          # once the distribution has one.
+          # The bucket that holds the site's files. name must be unique across all of AWS.
+          # Only the site's CloudFront distribution may read it.
+
+          # A static website: files in a private S3 bucket, served over HTTPS at the domain
+          # by a CloudFront distribution. The certificate is a TlsCertificate for the domain,
+          # validated by DNS in the domain's hosted zone.
+
+          # distribution holds what CloudFront reports once it has the distribution: its ARN,
+          # and the address it answers on (such as d111111abcdef8.cloudfront.net).
 
           # TlsCertificate: an ACM certificate validated through DNS records in a Route 53
           # hosted zone. Staged by what is observed:

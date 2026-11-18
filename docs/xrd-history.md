@@ -669,3 +669,39 @@ Result: 86 of 86 tests pass in this reconstruction.
 - `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
 - `M manifests/crossplane-compositions/webfleet/composition.yaml`
 - `M render-fixtures/staticwebsite/xr.yaml`
+
+### 20. Group the static website fields: domain, bucket, distribution status
+*2026-11-18T16:09:43 UTC*
+
+Session 532bc794, second request (2026-11-18, 16:07-16:09). The user asked
+for the attributes to be grouped: two S3 fields and two domain fields.
+
+What changed: StaticWebSiteSpec now holds `domain` and `bucket` groups.
+Status holds a `distribution` group with arn and domainName. The XR fixture
+and the tests moved to the grouped shape.
+
+Reasoning: the same nesting style as Environment's `network`, so a reader
+sees the groups first.
+
+Cluster (not in this repo): the XRD was applied to cia-test and a
+trololo.demotw.com site was deployed, with the bucket
+trololo-demotw-com-site, a CloudFront distribution and an alias record in the
+trololo.demotw.com hosted zone. A test index.html was uploaded in a later turn.
+None of this is in the repository.
+
+Result: 86 of 86 tests pass.
+
+**Tests:** PASS: 86/86
+**Generation:** ok
+
+**Files changed:**
+- `M kcl-scripts/StaticWebsite_test.k`
+- `M kcl-scripts/schemas_compositions.k`
+- `M kcl-scripts/staticwebsite.k`
+- `M manifests/crossplane-compositions/cdndistribution/composition.yaml`
+- `M manifests/crossplane-compositions/environment/composition.yaml`
+- `M manifests/crossplane-compositions/staticwebsite/composition.yaml`
+- `M manifests/crossplane-compositions/staticwebsite/xrd.yaml`
+- `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
+- `M manifests/crossplane-compositions/webfleet/composition.yaml`
+- `M render-fixtures/staticwebsite/xr.yaml`

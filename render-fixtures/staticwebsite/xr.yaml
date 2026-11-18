@@ -3,6 +3,8 @@ kind: StaticWebSite
 metadata:
   name: docs-site
 spec:
-  domainName: docs.example.com
-  hostedZoneId: Z0123456789ABCDEFGHIJ
-  bucketName: docs-example-com-assets
+  domain:
+    name: docs.example.com
+    hostedZoneId: Z0123456789ABCDEFGHIJ
+  bucket:
+    name: docs-example-com-assets

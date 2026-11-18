@@ -15,10 +15,10 @@ composeStaticWebSite = lambda oxr, ocds -> [any] {
     spec: schemas_compositions.StaticWebSiteSpec = oxr.spec
 
     # Bind XR values to locals before building resource dicts (see kcl-primer).
-    _domainName = spec.domainName
-    _hostedZoneId = spec.hostedZoneId
-    _bucketName = spec.bucketName
-    _region = spec.region
+    _domainName = spec.domain.name
+    _hostedZoneId = spec.domain.hostedZoneId
+    _bucketName = spec.bucket.name
+    _region = spec.bucket.region
 
     _certificateName = "certificate"
     _bucketResourceName = "bucket"
@@ -182,7 +182,12 @@ composeStaticWebSite = lambda oxr, ocds -> [any] {
         apiVersion = oxr.apiVersion
         kind = oxr.kind
         metadata = oxr.metadata
-        status = schemas_compositions.StaticWebSiteStatus {distributionDomainName = _distributionDomainName}
+        status = schemas_compositions.StaticWebSiteStatus {
+            distribution = schemas_compositions.StaticWebSiteDistributionStatus {
+                arn = _distributionArn
+                domainName = _distributionDomainName
+            }
+        }
     } if _distributionDomainName else None
 
     _publicAccessBlocks = [_publicAccessBlock] if _bucketArn else []

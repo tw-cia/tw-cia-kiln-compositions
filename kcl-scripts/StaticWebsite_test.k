@@ -7,9 +7,8 @@ _staticWebSiteOxr = {
     kind = "StaticWebSite"
     metadata = {name = "docs-site"}
     spec = {
-        domainName = "docs.example.com"
-        hostedZoneId = "Z0123456789ABCDEFGHIJ"
-        bucketName = "docs-example-com-assets"
+        domain = {name = "docs.example.com", hostedZoneId = "Z0123456789ABCDEFGHIJ"}
+        bucket = {name = "docs-example-com-assets"}
     }
 }
 
@@ -83,7 +82,7 @@ test_staticWebSite_cold_start_emits_certificate_bucket_and_access_control = lamb
 test_staticWebSite_nothing_depending_on_observed_state_is_emitted_cold = lambda {
     result = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, {})
 
-    assert len(_staticWebSiteKind(result, "PublicAccessBlock")) == 0, "waits for the bucket"
+    assert len(_staticWebSiteKind(result, "BucketPublicAccessBlock")) == 0, "waits for the bucket"
     assert len(_staticWebSiteKind(result, "Distribution")) == 0, "waits for the bucket, the access control and the certificate"
     assert len(_staticWebSiteKind(result, "BucketPolicy")) == 0, "waits for the distribution"
     assert len(_staticWebSiteKind(result, "Record")) == 0, "waits for the distribution"
@@ -114,14 +113,13 @@ test_staticWebSite_bucket_is_named_by_the_spec_in_the_region = lambda {
     assert bucket.spec.forProvider.region == "us-east-1"
 }
 
-test_staticWebSite_region_defaults_to_us_east_1 = lambda {
+test_staticWebSite_bucket_region_defaults_to_us_east_1 = lambda {
     spec = schemas_compositions.StaticWebSiteSpec {
-        domainName = "docs.example.com"
-        hostedZoneId = "Z0123456789ABCDEFGHIJ"
-        bucketName = "docs-example-com-assets"
+        domain = {name = "docs.example.com", hostedZoneId = "Z0123456789ABCDEFGHIJ"}
+        bucket = {name = "docs-example-com-assets"}
     }
 
-    assert spec.region == "us-east-1"
+    assert spec.bucket.region == "us-east-1"
 }
 
 test_staticWebSite_bucket_region_passes_through = lambda {
@@ -130,10 +128,8 @@ test_staticWebSite_bucket_region_passes_through = lambda {
         kind = "StaticWebSite"
         metadata = {name = "docs-site"}
         spec = {
-            domainName = "docs.example.com"
-            hostedZoneId = "Z0123456789ABCDEFGHIJ"
-            bucketName = "docs-example-com-assets"
-            region = "eu-west-1"
+            domain = {name = "docs.example.com", hostedZoneId = "Z0123456789ABCDEFGHIJ"}
+            bucket = {name = "docs-example-com-assets", region = "eu-west-1"}
         }
     }
     result = staticwebsite.composeStaticWebSite(oxr, {})
@@ -256,11 +252,12 @@ test_staticWebSite_no_status_before_the_distribution_has_a_domain_name = lambda 
     assert len(_staticWebSiteXr(result)) == 0
 }
 
-test_staticWebSite_reports_the_distribution_domain_name_once_observed = lambda {
+test_staticWebSite_reports_the_distribution_once_observed = lambda {
     result = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, _staticWebSiteOcdsDeployed)
     xr = _staticWebSiteXr(result)[0]
 
     assert xr.kind == "StaticWebSite"
     assert xr.apiVersion == "platform.demotw.com/v1alpha1"
-    assert xr.status.distributionDomainName == "d111111abcdef8.cloudfront.net"
+    assert xr.status.distribution.domainName == "d111111abcdef8.cloudfront.net"
+    assert xr.status.distribution.arn == _staticWebSiteDistributionArn
 }

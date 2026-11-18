@@ -123,18 +123,31 @@ schema EnvironmentSpec:
 schema EnvironmentStatus:
     webFleetDnsNames?: {str:str}
 
-# A static website: files in a private S3 bucket, served over HTTPS at domainName
-# by a CloudFront distribution. Only that distribution may read the bucket, through
-# an origin access control. The certificate is a TlsCertificate for domainName,
-# validated by DNS in hostedZoneId, and the domain gets an alias record to the
-# distribution. bucketName must be unique across all of AWS.
-schema StaticWebSiteSpec:
-    domainName: str
+# The address a static website is served at: name is the domain (such as
+# docs.example.com), and hostedZoneId is the Route 53 zone that holds it. The zone
+# gets the certificate's validation records and an alias to the distribution.
+schema StaticWebSiteDomainSpec:
+    name: str
     hostedZoneId: str
-    bucketName: str
+
+# The bucket that holds the site's files. name must be unique across all of AWS.
+# Only the site's CloudFront distribution may read it.
+schema StaticWebSiteBucketSpec:
+    name: str
     region: str = "us-east-1"
 
-# distributionDomainName is the CloudFront address (such as d111111abcdef8.cloudfront.net)
-# once the distribution has one.
+# A static website: files in a private S3 bucket, served over HTTPS at the domain
+# by a CloudFront distribution. The certificate is a TlsCertificate for the domain,
+# validated by DNS in the domain's hosted zone.
+schema StaticWebSiteSpec:
+    domain: StaticWebSiteDomainSpec
+    bucket: StaticWebSiteBucketSpec
+
+# distribution holds what CloudFront reports once it has the distribution: its ARN,
+# and the address it answers on (such as d111111abcdef8.cloudfront.net).
+schema StaticWebSiteDistributionStatus:
+    arn?: str
+    domainName?: str
+
 schema StaticWebSiteStatus:
-    distributionDomainName?: str
+    distribution?: StaticWebSiteDistributionStatus
