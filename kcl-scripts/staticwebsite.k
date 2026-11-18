@@ -2,256 +2,210 @@ import json
 import .schemas_compositions
 import .schemas_providers
 
-# A static site: an S3 bucket, a CloudFront distribution reading it through an
-# Origin Access Control, and the bucket policy that trusts that distribution.
-#
-# With a `zoneId` the site also gets its custom domain: a DNS-validated ACM
-# certificate, and a Route53 alias record pointing at the distribution.
-#
-# Every resource comes from an `.aws.m.upbound.io` (namespaced) API group, because
-# a namespaced XR may only compose namespaced resources.
+_staticWebsiteBucketRes = "bucket"
+_staticWebsitePublicAccessBlockRes = "public-access-block"
+_staticWebsiteOacRes = "origin-access-control"
+_staticWebsiteDistributionRes = "distribution"
+_staticWebsiteBucketPolicyRes = "bucket-policy"
+
+_staticWebsiteS3OriginId = "s3-origin"
+# AWS managed cache policy "CachingOptimized"
+_staticWebsiteCachePolicyId = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+
+# Typed reads of observed state. Each is only called when the atProvider exists.
+_staticWebsiteBucketStatus = lambda atProvider -> schemas_providers.S3AwsmUpboundIoV1beta1BucketStatusAtProvider {
+    _status: schemas_providers.S3AwsmUpboundIoV1beta1BucketStatusAtProvider = atProvider
+    _status
+}
+_staticWebsiteOacStatus = lambda atProvider -> schemas_providers.CloudfrontAwsmUpboundIoV1beta1OriginAccessControlStatusAtProvider {
+    _status: schemas_providers.CloudfrontAwsmUpboundIoV1beta1OriginAccessControlStatusAtProvider = atProvider
+    _status
+}
+_staticWebsiteDistributionStatus = lambda atProvider -> schemas_compositions.StaticWebsiteDistributionStatus {
+    _status: schemas_compositions.StaticWebsiteDistributionStatus = atProvider
+    _status
+}
+
+_staticWebsiteCustomErrors = lambda errorDocument -> [any] {
+    [{errorCode = code, responseCode = 404, responsePagePath = "/${errorDocument}", errorCachingMinTtl = 10} for code in [403, 404]]
+}
+
+_staticWebsiteDistributionForProvider = lambda specIn, domainName, oacId -> schemas_compositions.StaticWebsiteDistributionSpec {
+    _viewerCertificate = {
+        acmCertificateArn = specIn.certificateArn
+        sslSupportMethod = "sni-only"
+        minimumProtocolVersion = "TLSv1.2_2021"
+    } if specIn.certificateArn else {cloudfrontDefaultCertificate = True}
+    _forProvider: schemas_compositions.StaticWebsiteDistributionSpec = {
+        enabled = True
+        comment = specIn.bucketName
+        priceClass = specIn.priceClass
+        defaultRootObject = specIn.indexDocument
+        aliases = specIn.aliases
+        tags = specIn.tags
+        origin = [
+            {
+                originId = _staticWebsiteS3OriginId
+                domainName = domainName
+                originAccessControlId = oacId
+                s3OriginConfig = {originAccessIdentity = ""}
+            }
+        ]
+        defaultCacheBehavior = {
+            targetOriginId = _staticWebsiteS3OriginId
+            viewerProtocolPolicy = "redirect-to-https"
+            allowedMethods = ["GET", "HEAD"]
+            cachedMethods = ["GET", "HEAD"]
+            cachePolicyId = _staticWebsiteCachePolicyId
+            compress = True
+        }
+        restrictions = {geoRestriction = {restrictionType = "none"}}
+        viewerCertificate = _viewerCertificate
+        customErrorResponse = _staticWebsiteCustomErrors(specIn.errorDocument) if specIn.errorDocument else None
+    }
+    _forProvider
+}
+
+_staticWebsiteBucketPolicyForProvider = lambda bucketName, bucketRegion, distributionArn -> schemas_providers.S3AwsmUpboundIoV1beta1BucketPolicySpecForProvider {
+    _forProvider: schemas_providers.S3AwsmUpboundIoV1beta1BucketPolicySpecForProvider = {
+        bucket = bucketName
+        region = bucketRegion
+        policy = json.encode({
+            Version = "2012-10-17"
+            Statement = [
+                {
+                    Sid = "AllowCloudFrontRead"
+                    Effect = "Allow"
+                    Principal = {Service = "cloudfront.amazonaws.com"}
+                    Action = "s3:GetObject"
+                    Resource = "arn:aws:s3:::${bucketName}/*"
+                    Condition = {StringEquals = {"AWS:SourceArn" = distributionArn}}
+                }
+            ]
+        })
+    }
+    _forProvider
+}
+
+_staticWebsiteCloudFrontZoneId = "Z2FDTNDATAQYW2"
+
+_staticWebsiteAliasRecordForProvider = lambda zoneId, domain, distributionDomain -> schemas_providers.Route53AwsmUpboundIoV1beta1RecordSpecForProvider {
+    _forProvider: schemas_providers.Route53AwsmUpboundIoV1beta1RecordSpecForProvider = {
+        zoneId = zoneId
+        name = domain
+        $type = "A"
+        alias = {
+            name = distributionDomain
+            zoneId = _staticWebsiteCloudFrontZoneId
+            evaluateTargetHealth = False
+        }
+    }
+    _forProvider
+}
+
 composeStaticWebsite = lambda oxr, ocds -> [any] {
-    # Resource dicts below define their own `spec` key, which shadows this one
-    # inside them, so everything they need from the XR is bound to a local first.
     spec: schemas_compositions.StaticWebsiteSpec = oxr.spec
-
-    _region = spec.region or "us-east-1"
     _bucketName = spec.bucketName
-    _tags = spec.tags or {}
-    _indexDocument = spec.indexDocument or "index.html"
-    _errorDocument = spec.errorDocument or "404.html"
-    _providerConfigRef = {kind = "ClusterProviderConfig", name = spec.providerConfigName or "pod-identity"}
-    _domainName = spec.domainName
-    _zoneId = spec.zoneId
-    _customDomain = bool(_zoneId)
+    _region = spec.region
 
-    _oacName = "${_bucketName}-oac"
-    _certName = "${_bucketName}-cert"
+    _observedBucketAtProvider = ocds[_staticWebsiteBucketRes]?.Resource?.status?.atProvider
+    _observedBucket = _staticWebsiteBucketStatus(_observedBucketAtProvider) if _observedBucketAtProvider else None
+    _bucketRegionalDomainName = _observedBucket?.bucketRegionalDomainName
 
-    # --- Bucket and Origin Access Control ---
+    _observedOacAtProvider = ocds[_staticWebsiteOacRes]?.Resource?.status?.atProvider
+    _observedOac = _staticWebsiteOacStatus(_observedOacAtProvider) if _observedOacAtProvider else None
+    _oacId = _observedOac?.id
 
-    # The namespaced Bucket has no `bucket` field; the name comes from the
-    # external-name annotation.
+    _observedDistributionAtProvider = ocds[_staticWebsiteDistributionRes]?.Resource?.status?.atProvider
+    _observedDistribution = _staticWebsiteDistributionStatus(_observedDistributionAtProvider) if _observedDistributionAtProvider else None
+    _distributionArn = _observedDistribution?.arn
+    _distributionDomainName = _observedDistribution?.domainName
+    _distributionId = _observedDistribution?.id
+
+    _bucketForProvider: schemas_providers.S3AwsmUpboundIoV1beta1BucketSpecForProvider = {
+        region = _region
+        tags = spec.tags
+    }
     _bucket = {
         apiVersion = "s3.aws.m.upbound.io/v1beta1"
         kind = "Bucket"
-        metadata.name = _bucketName
         metadata.annotations = {
-            "krm.kcl.dev/composition-resource-name" = "bucket"
             "crossplane.io/external-name" = _bucketName
+            "krm.kcl.dev/composition-resource-name" = _staticWebsiteBucketRes
         }
-        spec.providerConfigRef = _providerConfigRef
-        spec.forProvider = schemas_providers.S3AwsmUpboundIoV1beta1BucketSpecForProvider {
-            region = _region
-            tags = _tags
-        }
+        spec.forProvider = _bucketForProvider
     }
 
+    _publicAccessBlockForProvider: schemas_providers.S3AwsmUpboundIoV1beta1BucketPublicAccessBlockSpecForProvider = {
+        bucket = _bucketName
+        region = _region
+        blockPublicAcls = True
+        blockPublicPolicy = True
+        ignorePublicAcls = True
+        restrictPublicBuckets = True
+    }
+    _publicAccessBlock = {
+        apiVersion = "s3.aws.m.upbound.io/v1beta1"
+        kind = "BucketPublicAccessBlock"
+        metadata.annotations = {
+            "krm.kcl.dev/composition-resource-name" = _staticWebsitePublicAccessBlockRes
+        }
+        spec.forProvider = _publicAccessBlockForProvider
+    }
+
+    _oacForProvider: schemas_providers.CloudfrontAwsmUpboundIoV1beta1OriginAccessControlSpecForProvider = {
+        name = "${_bucketName}-oac"
+        description = "Origin access for the ${_bucketName} static website"
+        originAccessControlOriginType = "s3"
+        signingBehavior = "always"
+        signingProtocol = "sigv4"
+    }
     _oac = {
         apiVersion = "cloudfront.aws.m.upbound.io/v1beta1"
         kind = "OriginAccessControl"
-        metadata.name = _oacName
-        metadata.annotations = {"krm.kcl.dev/composition-resource-name" = "oac"}
-        spec.providerConfigRef = _providerConfigRef
-        spec.forProvider = schemas_providers.CloudfrontAwsmUpboundIoV1beta1OriginAccessControlSpecForProvider {
-            name = _oacName
-            description = "OAC for ${_domainName}"
-            originAccessControlOriginType = "s3"
-            signingBehavior = "always"
-            signingProtocol = "sigv4"
+        metadata.annotations = {
+            "krm.kcl.dev/composition-resource-name" = _staticWebsiteOacRes
         }
+        spec.forProvider = _oacForProvider
     }
 
-    # --- Certificate (custom domain only) ---
-
-    # CloudFront only accepts certificates from us-east-1, whatever the bucket region.
-    _certificate = [
-        {
-            apiVersion = "acm.aws.m.upbound.io/v1beta1"
-            kind = "Certificate"
-            metadata.name = _certName
-            metadata.annotations = {"krm.kcl.dev/composition-resource-name" = "certificate"}
-            spec.providerConfigRef = _providerConfigRef
-            spec.forProvider = schemas_providers.AcmAwsmUpboundIoV1beta1CertificateSpecForProvider {
-                region = "us-east-1"
-                domainName = _domainName
-                validationMethod = "DNS"
-                tags = _tags
-            }
+    _distributionForProvider = _staticWebsiteDistributionForProvider(spec, _bucketRegionalDomainName, _oacId) if _bucketRegionalDomainName and _oacId else None
+    _distribution = {
+        apiVersion = "cloudfront.aws.m.upbound.io/v1beta1"
+        kind = "Distribution"
+        metadata.annotations = {
+            "krm.kcl.dev/composition-resource-name" = _staticWebsiteDistributionRes
         }
-    ] if _customDomain else []
+        spec.forProvider = _distributionForProvider
+    } if _distributionForProvider else None
 
-    _certAtProvider = ocds["certificate"]?.Resource?.status?.atProvider
-    _certArn = _certAtProvider?.arn
-    # The Certificate's observed status lags until the provider's next poll, but the
-    # CertificateValidation only becomes Ready once ACM has issued the certificate.
-    _validationConditions = ocds["cert-validation"]?.Resource?.status?.conditions or []
-    _validationReady = any c in _validationConditions {
-        c.type == "Ready" and c.status == "True"
-    }
-    _certIssued = _certAtProvider?.status == "ISSUED" or _validationReady
-    _validationOptions = _certAtProvider?.domainValidationOptions or []
-    _validationOption = _validationOptions[0] if _validationOptions else None
-
-    # ACM publishes the record it wants to see only after the certificate exists.
-    _certValidation = [
-        {
-            apiVersion = "route53.aws.m.upbound.io/v1beta1"
-            kind = "Record"
-            metadata.name = "${_bucketName}-cert-validation"
-            metadata.annotations = {"krm.kcl.dev/composition-resource-name" = "cert-validation-record"}
-            spec.providerConfigRef = _providerConfigRef
-            spec.forProvider = schemas_providers.Route53AwsmUpboundIoV1beta1RecordSpecForProvider {
-                zoneId = _zoneId
-                name = _validationOption.resourceRecordName
-                $type = _validationOption.resourceRecordType
-                records = [_validationOption.resourceRecordValue]
-                ttl = 60
-                allowOverwrite = True
-            }
-        }
-        {
-            apiVersion = "acm.aws.m.upbound.io/v1beta1"
-            kind = "CertificateValidation"
-            metadata.name = "${_bucketName}-cert-validation"
-            metadata.annotations = {"krm.kcl.dev/composition-resource-name" = "cert-validation"}
-            spec.providerConfigRef = _providerConfigRef
-            spec.forProvider = schemas_providers.AcmAwsmUpboundIoV1beta1CertificateValidationSpecForProvider {
-                region = "us-east-1"
-                certificateArnRef = {name = _certName}
-                validationRecordFqdns = [_validationOption.resourceRecordName]
-            }
-        }
-    ] if _customDomain and _validationOption else []
-
-    # --- Distribution ---
-
-    # With a custom domain the distribution must wait for an issued certificate:
-    # CloudFront rejects an alias that no valid certificate covers.
-    _viewerCertificate = {
-        acmCertificateArn = _certArn
-        sslSupportMethod = "sni-only"
-        minimumProtocolVersion = "TLSv1.2_2021"
-    } if _customDomain else {cloudfrontDefaultCertificate = True}
-
-    _distribution = [
-        {
-            apiVersion = "cloudfront.aws.m.upbound.io/v1beta1"
-            kind = "Distribution"
-            metadata.name = "${_bucketName}-dist"
-            metadata.annotations = {"krm.kcl.dev/composition-resource-name" = "distribution"}
-            spec.providerConfigRef = _providerConfigRef
-            spec.forProvider = schemas_providers.CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProvider {
-                enabled = True
-                isIpv6Enabled = True
-                priceClass = "PriceClass_100"
-                defaultRootObject = _indexDocument
-                tags = _tags
-                if _customDomain:
-                    aliases = [_domainName]
-                # Crossplane resolves the OAC's id from the composed resource above.
-                origin = [{
-                    domainName = "${_bucketName}.s3.${_region}.amazonaws.com"
-                    originId = _bucketName
-                    originAccessControlIdRef = {name = _oacName}
-                }]
-                defaultCacheBehavior = {
-                    allowedMethods = ["GET", "HEAD"]
-                    cachedMethods = ["GET", "HEAD"]
-                    targetOriginId = _bucketName
-                    viewerProtocolPolicy = "redirect-to-https"
-                    compress = True
-                    # CachingOptimized, an AWS managed cache policy.
-                    cachePolicyId = "658327ea-f89d-4fab-a63d-7e88639e58f6"
-                }
-                customErrorResponse = [{
-                    errorCode = 404
-                    responseCode = 404
-                    responsePagePath = "/${_errorDocument}"
-                }]
-                restrictions = {geoRestriction = {restrictionType = "none"}}
-                viewerCertificate = _viewerCertificate
-            }
-        }
-    ] if not _customDomain or _certIssued else []
-
-    _distAtProvider = ocds["distribution"]?.Resource?.status?.atProvider
-    _distributionArn = _distAtProvider?.arn
-    _distributionDomain = _distAtProvider?.domainName
-    _distributionZone = _distAtProvider?.hostedZoneId
-
-    # --- Bucket policy ---
-
-    # Only the distribution may read the bucket. The SourceArn condition can only
-    # be set once the distribution reports its ARN, so it is added when observed.
-    _statement = {
-        Sid = "AllowCloudFrontServicePrincipalReadOnly"
-        Effect = "Allow"
-        Principal = {Service = "cloudfront.amazonaws.com"}
-        Action = "s3:GetObject"
-        Resource = "arn:aws:s3:::${_bucketName}/*"
-    }
-    _policyDocument = {
-        Version = "2012-10-17"
-        Statement = [_statement | {
-            Condition.StringEquals = {"AWS:SourceArn" = _distributionArn}
-        } if _distributionArn else _statement]
-    }
-
-    _policy = {
+    _bucketPolicy = {
         apiVersion = "s3.aws.m.upbound.io/v1beta1"
         kind = "BucketPolicy"
-        metadata.name = "${_bucketName}-policy"
-        metadata.annotations = {"krm.kcl.dev/composition-resource-name" = "policy"}
-        spec.providerConfigRef = _providerConfigRef
-        spec.forProvider = schemas_providers.S3AwsmUpboundIoV1beta1BucketPolicySpecForProvider {
-            region = _region
-            bucket = _bucketName
-            # The namespaced BucketPolicy takes the document as a JSON string.
-            policy = json.encode(_policyDocument)
+        metadata.annotations = {
+            "krm.kcl.dev/composition-resource-name" = _staticWebsiteBucketPolicyRes
         }
-    }
+        spec.forProvider = _staticWebsiteBucketPolicyForProvider(_bucketName, _region, _distributionArn)
+    } if _distributionArn else None
 
-    # --- Alias record (custom domain only) ---
-
-    _dns = [
-        {
-            apiVersion = "route53.aws.m.upbound.io/v1beta1"
-            kind = "Record"
-            metadata.name = "${_bucketName}-dns"
-            metadata.annotations = {"krm.kcl.dev/composition-resource-name" = "dns"}
-            spec.providerConfigRef = _providerConfigRef
-            spec.forProvider = schemas_providers.Route53AwsmUpboundIoV1beta1RecordSpecForProvider {
-                zoneId = _zoneId
-                name = _domainName
-                $type = "A"
-                alias = {
-                    name = _distributionDomain
-                    zoneId = _distributionZone
-                    evaluateTargetHealth = False
-                }
-            }
+    _xr = {
+        apiVersion = oxr.apiVersion
+        kind = oxr.kind
+        metadata = oxr.metadata
+        status = schemas_compositions.StaticWebsiteStatus {
+            distributionId = _distributionId
+            domainName = _distributionDomainName
         }
-    ] if _customDomain and _distributionDomain and _distributionZone else []
+    } if _distributionDomainName else None
 
-    # --- Status ---
-
-    _status = {
-        bucketName = _bucketName
-        domainName = _domainName
-        distributionDomainName = _distributionDomain
-        url = "https://${_domainName}" if _customDomain else "https://${_distributionDomain}"
-        if _certArn:
-            certificateArn = _certArn
-    }
-    _xr = [
-        {
-            apiVersion = oxr.apiVersion
-            kind = oxr.kind
-            metadata = oxr.metadata
-            status = _status
+    _aliasRecords = [{
+        apiVersion = "route53.aws.m.upbound.io/v1beta1"
+        kind = "Record"
+        metadata.annotations = {
+            "krm.kcl.dev/composition-resource-name" = "alias-record-${i}"
         }
-    ] if _distributionDomain else []
+        spec.forProvider = _staticWebsiteAliasRecordForProvider(spec.zoneId, domain, _distributionDomainName)
+    } for i, domain in (spec.aliases or [])] if spec.zoneId and _distributionDomainName else []
 
-    [_bucket, _oac] + _certificate + _certValidation + _distribution + [_policy] + _dns + _xr
+    [_bucket, _publicAccessBlock, _oac] + ([_distribution] if _distribution else []) + ([_bucketPolicy] if _bucketPolicy else []) + _aliasRecords + ([_xr] if _xr else [])
 }

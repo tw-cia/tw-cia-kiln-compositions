@@ -17,18 +17,27 @@ spec:
         type: object
         properties:
           spec:
+            description: 'A static website: a private S3 bucket served to the internet
+              through CloudFront.'
             properties:
+              aliases:
+                items:
+                  type: string
+                type: array
               bucketName:
                 type: string
-              domainName:
+              certificateArn:
                 type: string
               errorDocument:
                 type: string
               indexDocument:
+                default: index.html
                 type: string
-              providerConfigName:
+              priceClass:
+                default: PriceClass_100
                 type: string
               region:
+                default: us-east-1
                 type: string
               tags:
                 additionalProperties:
@@ -37,19 +46,13 @@ spec:
               zoneId:
                 type: string
             required:
-            - domainName
             - bucketName
             type: object
           status:
+            description: What a consumer needs to reach the site.
             properties:
-              bucketName:
-                type: string
-              certificateArn:
-                type: string
-              distributionDomainName:
+              distributionId:
                 type: string
               domainName:
-                type: string
-              url:
                 type: string
             type: object

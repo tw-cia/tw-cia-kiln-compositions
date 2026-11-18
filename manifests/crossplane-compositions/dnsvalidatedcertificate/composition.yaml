@@ -1,0 +1,370 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: dnsvalidatedcertificate-kcl-first
+spec:
+  compositeTypeRef:
+    apiVersion: platform.demotw.com/v1alpha1
+    kind: DnsValidatedCertificate
+  mode: Pipeline
+  pipeline:
+  - step: compose
+    functionRef:
+      name: function-kcl
+    input:
+      apiVersion: krm.kcl.dev/v1alpha1
+      kind: KCLInput
+      spec:
+        source: |
+          # Curated provider schemas. `kiln import <crd>` appends here.
+
+          schema AcmAwsmUpboundIoV1beta1CertificateAtProviderDomainValidationOptions:
+              domainName?: str
+              resourceRecordName?: str
+              resourceRecordType?: str
+              resourceRecordValue?: str
+
+          schema AcmAwsmUpboundIoV1beta1CertificateAtProviderOptions:
+              certificateTransparencyLoggingPreference?: str
+              export?: str
+
+          schema AcmAwsmUpboundIoV1beta1CertificateAtProviderRenewalSummary:
+              renewalStatus?: str
+              renewalStatusReason?: str
+              updatedAt?: str
+
+          schema AcmAwsmUpboundIoV1beta1CertificateAtProviderValidationOption:
+              domainName?: str
+              validationDomain?: str
+
+          schema AcmAwsmUpboundIoV1beta1CertificateSpecForProviderCertificateAuthorityArnRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AcmAwsmUpboundIoV1beta1CertificateSpecForProviderCertificateAuthorityArnSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AcmAwsmUpboundIoV1beta1CertificateSpecForProviderCertificateAuthorityArnRef:
+              name: str
+              namespace?: str
+              policy?: AcmAwsmUpboundIoV1beta1CertificateSpecForProviderCertificateAuthorityArnRefPolicy
+
+          schema AcmAwsmUpboundIoV1beta1CertificateSpecForProviderCertificateAuthorityArnSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: AcmAwsmUpboundIoV1beta1CertificateSpecForProviderCertificateAuthorityArnSelectorPolicy
+
+          schema AcmAwsmUpboundIoV1beta1CertificateSpecForProviderOptions:
+              certificateTransparencyLoggingPreference?: str
+              export?: str
+
+          schema AcmAwsmUpboundIoV1beta1CertificateSpecForProviderPrivateKeySecretRef:
+              key: str
+              name: str
+
+          schema AcmAwsmUpboundIoV1beta1CertificateSpecForProviderValidationOption:
+              domainName?: str
+              validationDomain?: str
+
+          schema AcmAwsmUpboundIoV1beta1CertificateSpecForProvider:
+              certificateAuthorityArn?: str
+              certificateAuthorityArnRef?: AcmAwsmUpboundIoV1beta1CertificateSpecForProviderCertificateAuthorityArnRef
+              certificateAuthorityArnSelector?: AcmAwsmUpboundIoV1beta1CertificateSpecForProviderCertificateAuthorityArnSelector
+              certificateBody?: str
+              certificateChain?: str
+              domainName?: str
+              earlyRenewalDuration?: str
+              keyAlgorithm?: str
+              options?: AcmAwsmUpboundIoV1beta1CertificateSpecForProviderOptions
+              privateKeySecretRef?: AcmAwsmUpboundIoV1beta1CertificateSpecForProviderPrivateKeySecretRef
+              privateKeyWo?: str
+              privateKeyWoVersion?: float
+              region: str
+              subjectAlternativeNames?: [str]
+              tags?: {str:str}
+              validationMethod?: str
+              validationOption?: [AcmAwsmUpboundIoV1beta1CertificateSpecForProviderValidationOption]
+
+          schema AcmAwsmUpboundIoV1beta1CertificateStatusAtProvider:
+              arn?: str
+              certificateAuthorityArn?: str
+              certificateBody?: str
+              certificateChain?: str
+              domainName?: str
+              domainValidationOptions?: [AcmAwsmUpboundIoV1beta1CertificateAtProviderDomainValidationOptions]
+              earlyRenewalDuration?: str
+              id?: str
+              keyAlgorithm?: str
+              notAfter?: str
+              notBefore?: str
+              options?: AcmAwsmUpboundIoV1beta1CertificateAtProviderOptions
+              pendingRenewal?: bool
+              privateKeyWo?: str
+              privateKeyWoVersion?: float
+              region?: str
+              renewalEligibility?: str
+              renewalSummary?: [AcmAwsmUpboundIoV1beta1CertificateAtProviderRenewalSummary]
+              status?: str
+              subjectAlternativeNames?: [str]
+              tags?: {str:str}
+              tagsAll?: {str:str}
+              $type?: str
+              validationEmails?: [str]
+              validationMethod?: str
+              validationOption?: [AcmAwsmUpboundIoV1beta1CertificateAtProviderValidationOption]
+
+          schema AcmAwsmUpboundIoV1beta1CertificateValidationSpecForProviderCertificateArnRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AcmAwsmUpboundIoV1beta1CertificateValidationSpecForProviderCertificateArnSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema AcmAwsmUpboundIoV1beta1CertificateValidationSpecForProviderCertificateArnRef:
+              name: str
+              namespace?: str
+              policy?: AcmAwsmUpboundIoV1beta1CertificateValidationSpecForProviderCertificateArnRefPolicy
+
+          schema AcmAwsmUpboundIoV1beta1CertificateValidationSpecForProviderCertificateArnSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: AcmAwsmUpboundIoV1beta1CertificateValidationSpecForProviderCertificateArnSelectorPolicy
+
+          schema AcmAwsmUpboundIoV1beta1CertificateValidationSpecForProvider:
+              certificateArn?: str
+              certificateArnRef?: AcmAwsmUpboundIoV1beta1CertificateValidationSpecForProviderCertificateArnRef
+              certificateArnSelector?: AcmAwsmUpboundIoV1beta1CertificateValidationSpecForProviderCertificateArnSelector
+              region: str
+              validationRecordFqdns?: [str]
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderAlias:
+              evaluateTargetHealth?: bool
+              name?: str
+              zoneId?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderCidrRoutingPolicy:
+              collectionId?: str
+              locationName?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderFailoverRoutingPolicy:
+              $type?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeolocationRoutingPolicy:
+              continent?: str
+              country?: str
+              subdivision?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeoproximityRoutingPolicy:
+              awsRegion?: str
+              bias?: float
+              coordinates?: [Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeoproximityRoutingPolicyCoordinates]
+              localZoneGroup?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDRef:
+              name: str
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDRefPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDSelectorPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderLatencyRoutingPolicy:
+              region: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsRefs:
+              name: str
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsRefsPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsSelectorPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderWeightedRoutingPolicy:
+              weight?: float
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDRef:
+              name: str
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDRefPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDSelectorPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeoproximityRoutingPolicyCoordinates:
+              latitude?: str
+              longitude?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsRefsPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProvider:
+              alias?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderAlias
+              allowOverwrite?: bool
+              cidrRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderCidrRoutingPolicy
+              failoverRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderFailoverRoutingPolicy
+              geolocationRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeolocationRoutingPolicy
+              geoproximityRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeoproximityRoutingPolicy
+              healthCheckId?: str
+              healthCheckIdRef?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDRef
+              healthCheckIdSelector?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDSelector
+              latencyRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderLatencyRoutingPolicy
+              multivalueAnswerRoutingPolicy?: bool
+              name?: str
+              records?: [str]
+              recordsRefs?: [Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsRefs]
+              recordsSelector?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsSelector
+              setIdentifier?: str
+              ttl?: float
+              $type?: str
+              weightedRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderWeightedRoutingPolicy
+              zoneId?: str
+              zoneIdRef?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDRef
+              zoneIdSelector?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDSelector
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema DnsValidatedCertificateSpec:
+              domainName: str
+              zoneId: str
+              region: str = "us-east-1"
+              [str]: any
+
+          schema DnsValidatedCertificateStatus:
+              certificateArn?: str
+
+          # Narrow Distribution shapes: only the fields the compose function sets or reads.
+          # Hand-written, so `kiln import` does not touch them. `kiln render` still checks
+          # every field we set against the real CRD.
+
+          # Observed state stays open: a real atProvider has many more fields than we read.
+
+          _dvcCertificateRes = "certificate"
+          _dvcValidationRes = "certificate-validation"
+          _dvcValidationRecordPrefix = "validation-record-"
+
+          # Typed read of the observed certificate. Only called once the atProvider exists.
+          _dvcCertificateStatus = lambda atProvider -> AcmAwsmUpboundIoV1beta1CertificateStatusAtProvider {
+              _status: AcmAwsmUpboundIoV1beta1CertificateStatusAtProvider = atProvider
+              _status
+          }
+
+          _dvcValidationRecordForProvider = lambda zoneId, opt -> Route53AwsmUpboundIoV1beta1RecordSpecForProvider {
+              _forProvider: Route53AwsmUpboundIoV1beta1RecordSpecForProvider = {
+                  zoneId = zoneId
+                  name = opt.resourceRecordName
+                  $type = opt.resourceRecordType
+                  records = [opt.resourceRecordValue]
+                  ttl = 60
+                  allowOverwrite = True
+              }
+              _forProvider
+          }
+
+          composeDnsValidatedCertificate = lambda oxr, ocds -> [any] {
+              spec: DnsValidatedCertificateSpec = oxr.spec
+              _domainName = spec.domainName
+              _zoneId = spec.zoneId
+              _region = spec.region
+
+              _observedCertAtProvider = ocds[_dvcCertificateRes]?.Resource?.status?.atProvider
+              _observedCert = _dvcCertificateStatus(_observedCertAtProvider) if _observedCertAtProvider else None
+              _certArn = _observedCert?.arn
+              _validationOptions = _observedCert?.domainValidationOptions or []
+              _validationFqdns = [opt.resourceRecordName for opt in _validationOptions]
+
+              _certForProvider: AcmAwsmUpboundIoV1beta1CertificateSpecForProvider = {
+                  domainName = _domainName
+                  validationMethod = "DNS"
+                  region = _region
+              }
+              _certificate = {
+                  apiVersion = "acm.aws.m.upbound.io/v1beta1"
+                  kind = "Certificate"
+                  metadata.annotations = {
+                      "krm.kcl.dev/composition-resource-name" = _dvcCertificateRes
+                  }
+                  spec.forProvider = _certForProvider
+              }
+
+              _validationRecords = [{
+                  apiVersion = "route53.aws.m.upbound.io/v1beta1"
+                  kind = "Record"
+                  metadata.annotations = {
+                      "krm.kcl.dev/composition-resource-name" = "${_dvcValidationRecordPrefix}${i}"
+                  }
+                  spec.forProvider = _dvcValidationRecordForProvider(_zoneId, opt)
+              } for i, opt in _validationOptions]
+
+              _validationForProvider: AcmAwsmUpboundIoV1beta1CertificateValidationSpecForProvider = {
+                  certificateArn = _certArn
+                  region = _region
+                  validationRecordFqdns = _validationFqdns
+              }
+              _validation = {
+                  apiVersion = "acm.aws.m.upbound.io/v1beta1"
+                  kind = "CertificateValidation"
+                  metadata.annotations = {
+                      "krm.kcl.dev/composition-resource-name" = _dvcValidationRes
+                  }
+                  spec.forProvider = _validationForProvider
+              } if _certArn and len(_validationFqdns) > 0 else None
+
+              _validationConditions = ocds[_dvcValidationRes]?.Resource?.status?.conditions or []
+              _validated = len([c for c in _validationConditions if c.type == "Ready" and c.status == "True"]) > 0
+
+              _xr = {
+                  apiVersion = oxr.apiVersion
+                  kind = oxr.kind
+                  metadata = oxr.metadata
+                  status = DnsValidatedCertificateStatus {certificateArn = _certArn}
+              } if _validated and _certArn else None
+
+              [_certificate] + _validationRecords + ([_validation] if _validation else []) + ([_xr] if _xr else [])
+          }
+
+          _kilnSpecFields = ["domainName", "region", "zoneId"]
+          _kilnObservedXr = option("params").oxr
+          _kilnOxr = _kilnObservedXr | {spec = {k: v for k, v in _kilnObservedXr.spec if k in _kilnSpecFields}} if _kilnObservedXr?.spec else _kilnObservedXr
+          _kilnProviderConfigRef = {kind = "ClusterProviderConfig", name = "pod-identity"}
+          _kilnIsManaged = lambda r: any -> bool {
+              "forProvider" in (r?.spec or {}) and not (r?.apiVersion or "").startswith("platform.demotw.com/")
+          }
+          _kilnWithProviderConfig = lambda r: any -> any {
+              r | {spec.providerConfigRef = _kilnProviderConfigRef} if _kilnIsManaged(r) and not r?.spec?.providerConfigRef else r
+          }
+          items = [_kilnWithProviderConfig(r) for r in composeDnsValidatedCertificate(_kilnOxr, option("params").ocds)]
+  - step: auto-ready
+    functionRef:
+      name: function-auto-ready

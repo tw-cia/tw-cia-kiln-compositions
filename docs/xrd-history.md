@@ -332,3 +332,38 @@ output later.
 - `D render-fixtures/staticwebsite.yaml`
 - `M render-fixtures/staticwebsite/xr.yaml`
 - `A test-trololo-website.yaml`
+
+### 10. Narrow schemas, and a handover in SESSION-NOTES.md
+*2026-11-18T07:37:21 UTC*
+
+Session a6ede902 (2026-11-17, 19:42 to 2026-11-18, 07:37). Split the
+certificate concern into dnsvalidatedcertificate.k and tightened the
+schemas.
+
+What changed: schemas_compositions.k narrowed, staticwebsite.k and its test
+adjusted, and dnsvalidatedcertificate.k with its test added.
+
+Reasoning: a narrow spec makes the XRD smaller, which helps with the
+composition size limit. The session recorded the size findings in
+SESSION-NOTES.md.
+
+Challenge: the narrow-schema change was not yet on the cluster when the
+session ended. The notes say to run `kubectl diff` first.
+
+**Tests:** error[E2G22]: TypeError | error[E2G22]: TypeError | error[E2G22]: TypeError
+**Generation:** ok
+
+**Files changed:**
+- `A SESSION-NOTES.md`
+- `D improvements.md`
+- `M kcl-scripts/StaticWebsite_test.k`
+- `A kcl-scripts/dnsvalidatedcertificate.k`
+- `A kcl-scripts/dnsvalidatedcertificate_test.k`
+- `M kcl-scripts/schemas_compositions.k`
+- `M kcl-scripts/staticwebsite.k`
+- `M kiln.toml`
+- `A manifests/crossplane-compositions/dnsvalidatedcertificate/composition.yaml`
+- `A manifests/crossplane-compositions/dnsvalidatedcertificate/xrd.yaml`
+- `M manifests/crossplane-compositions/staticwebsite/composition.yaml`
+- `M manifests/crossplane-compositions/staticwebsite/xrd.yaml`
+- `D test-trololo-website.yaml`

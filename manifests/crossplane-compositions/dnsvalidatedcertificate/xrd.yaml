@@ -1,0 +1,40 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: dnsvalidatedcertificates.platform.demotw.com
+spec:
+  group: platform.demotw.com
+  names:
+    kind: DnsValidatedCertificate
+    plural: dnsvalidatedcertificates
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            description: An ACM certificate for one domain, validated by DNS records
+              in a Route 53 hosted zone.
+            properties:
+              domainName:
+                type: string
+              region:
+                default: us-east-1
+                type: string
+              zoneId:
+                type: string
+            required:
+            - domainName
+            - zoneId
+            type: object
+          status:
+            description: The issued certificate's ARN, reported once validation has
+              completed.
+            properties:
+              certificateArn:
+                type: string
+            type: object

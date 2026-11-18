@@ -1,258 +1,268 @@
 import json
 import .staticwebsite
 
-_staticWebsiteBaseOxr = {
-    apiVersion = "platform.demotw.com/v1alpha1"
-    kind = "StaticWebsite"
-    metadata.name = "example"
-    spec = {
-        domainName = "www.example.com"
-        bucketName = "example-bucket"
+_staticWebsiteOxrFor = lambda specIn {
+    _oxr = {
+        apiVersion = "platform.demotw.com/v1alpha1"
+        kind = "StaticWebsite"
+        metadata = {name = "my-site"}
+        spec = specIn
     }
+    _oxr
 }
 
-_staticWebsiteZonedOxr = _staticWebsiteBaseOxr | {spec: {zoneId = "Z0510802PA88E7HZZ597"}}
-
-_staticWebsiteCertArn = "arn:aws:acm:us-east-1:123456789012:certificate/abc"
-
-# ACM has published the DNS validation record but not issued the certificate.
-_staticWebsiteObservedCertPending = {
-    "certificate" = {
-        Resource.status.atProvider = {
-            arn = _staticWebsiteCertArn
-            status = "PENDING_VALIDATION"
-            domainValidationOptions = [{
-                domainName = "www.example.com"
-                resourceRecordName = "_abc.www.example.com."
-                resourceRecordType = "CNAME"
-                resourceRecordValue = "_xyz.acm-validations.aws."
-            }]
-        }
-    }
+_staticWebsiteFind = lambda resources, kind {
+    [r for r in resources if r.kind == kind][0]
 }
 
-_staticWebsiteObservedCertIssued = {
-    "certificate" = {
-        Resource.status.atProvider = _staticWebsiteObservedCertPending.certificate.Resource.status.atProvider | {status = "ISSUED"}
-    }
+# Observed stages. Keys are the composition-resource-names used in the compose function.
+_staticWebsiteBucketObs = {
+    Resource = {status = {atProvider = {
+        arn = "arn:aws:s3:::example-site"
+        bucketRegionalDomainName = "example-site.s3.us-east-1.amazonaws.com"
+    }}}
+}
+_staticWebsiteOacObs = {
+    Resource = {status = {atProvider = {id = "E2OACID"}}}
+}
+_staticWebsiteDistributionObs = {
+    Resource = {status = {atProvider = {
+        arn = "arn:aws:cloudfront::123456789012:distribution/E1DIST"
+        domainName = "d111abcdef8.cloudfront.net"
+        id = "E1DIST"
+    }}}
+}
+_staticWebsiteStorageOcds = {
+    bucket = _staticWebsiteBucketObs
+    "origin-access-control" = _staticWebsiteOacObs
+}
+_staticWebsiteAllOcds = {
+    **_staticWebsiteStorageOcds
+    distribution = _staticWebsiteDistributionObs
+}
+_staticWebsiteEmptyBucketOcds = {
+    bucket = {Resource = {status = {atProvider = {}}}}
+    "origin-access-control" = _staticWebsiteOacObs
 }
 
-_staticWebsiteObservedDistribution = {
-    "distribution" = {
-        Resource.status.atProvider = {
-            arn = "arn:aws:cloudfront::123456789012:distribution/E1234567890"
-            domainName = "d111111abcdef8.cloudfront.net"
-            hostedZoneId = "Z2FDTNDATAQYW2"
-        }
-    }
-}
+test_staticWebsite_cold_start_composes_bucket_access_block_and_oac = lambda {
+    oxr = _staticWebsiteOxrFor({bucketName = "example-site"})
 
-_staticWebsiteFullyObserved = _staticWebsiteObservedCertIssued | _staticWebsiteObservedDistribution
-
-_staticWebsiteByName = lambda result: [any] -> {str:any} {
-    {r.metadata.annotations["krm.kcl.dev/composition-resource-name"]: r for r in result if "annotations" in r.metadata}
-}
-
-# --- Without a zone: no custom domain, so no certificate. ---
-
-test_cold_start_without_zone_emits_four_resources = lambda {
-    byName = _staticWebsiteByName(staticwebsite.composeStaticWebsite(_staticWebsiteBaseOxr, {}))
-
-    assert sorted(byName) == ["bucket", "distribution", "oac", "policy"]
-}
-
-test_without_zone_distribution_uses_default_certificate = lambda {
-    forProvider = _staticWebsiteByName(staticwebsite.composeStaticWebsite(_staticWebsiteBaseOxr, {}))["distribution"].spec.forProvider
-
-    assert forProvider.viewerCertificate.cloudfrontDefaultCertificate == True
-    assert not forProvider.aliases, "an alias without a matching ACM certificate is rejected by CloudFront"
-}
-
-# --- Provider config ---
-
-test_every_resource_uses_pod_identity_by_default = lambda {
-    result = staticwebsite.composeStaticWebsite(_staticWebsiteZonedOxr, _staticWebsiteFullyObserved)
-    composed = [r for r in result if r.kind != "StaticWebsite"]
-
-    assert len(composed) == 8
-    assert all r in composed {
-        r.spec.providerConfigRef == {kind = "ClusterProviderConfig", name = "pod-identity"}
-    }, "every composed resource must reference the pod-identity ClusterProviderConfig"
-}
-
-test_provider_config_can_be_overridden = lambda {
-    oxr = _staticWebsiteBaseOxr | {spec: {providerConfigName = "other"}}
     result = staticwebsite.composeStaticWebsite(oxr, {})
 
-    assert all r in result {
-        r.spec.providerConfigRef.name == "other"
-    }
+    kinds = [r.kind for r in result]
+    assert kinds == ["Bucket", "BucketPublicAccessBlock", "OriginAccessControl"]
 }
 
-# A namespaced XR may only compose namespaced resources. Upbound ships both a
-# cluster-scoped group (<svc>.aws.upbound.io) and a namespaced one
-# (<svc>.aws.m.upbound.io); every resource here must come from the latter.
-test_all_resources_use_namespaced_api_groups = lambda {
-    result = staticwebsite.composeStaticWebsite(_staticWebsiteZonedOxr, _staticWebsiteFullyObserved)
+test_staticWebsite_bucket_is_named_by_bucket_name_in_its_region_with_tags = lambda {
+    oxr = _staticWebsiteOxrFor({bucketName = "example-site", region = "eu-west-1", tags = {team = "web"}})
 
-    assert all r in [r for r in result if r.kind != "StaticWebsite"] {
-        ".aws.m.upbound.io/" in r.apiVersion
-    }, "every composed resource must use an .aws.m.upbound.io (namespaced) API group"
+    result = staticwebsite.composeStaticWebsite(oxr, {})
+
+    bucket = _staticWebsiteFind(result, "Bucket")
+    assert bucket.apiVersion == "s3.aws.m.upbound.io/v1beta1"
+    assert bucket.metadata.annotations["crossplane.io/external-name"] == "example-site"
+    assert bucket.metadata.annotations["krm.kcl.dev/composition-resource-name"] == "bucket"
+    assert bucket.spec.forProvider.region == "eu-west-1"
+    assert bucket.spec.forProvider.tags.team == "web"
 }
 
-# --- Bucket, OAC, policy ---
+test_staticWebsite_region_defaults_to_us_east_1 = lambda {
+    oxr = _staticWebsiteOxrFor({bucketName = "example-site"})
 
-test_bucket_names_itself_via_external_name = lambda {
-    bucket = _staticWebsiteByName(staticwebsite.composeStaticWebsite(_staticWebsiteBaseOxr, {}))["bucket"]
+    result = staticwebsite.composeStaticWebsite(oxr, {})
 
-    assert "bucket" not in bucket.spec.forProvider, "forProvider.bucket is not in the namespaced Bucket schema"
-    assert bucket.metadata.annotations["crossplane.io/external-name"] == "example-bucket"
-    assert bucket.spec.forProvider.region == "us-east-1", "region is required and should default"
+    bucket = _staticWebsiteFind(result, "Bucket")
+    assert bucket.spec.forProvider.region == "us-east-1"
 }
 
-test_region_and_tags_flow_through = lambda {
-    oxr = _staticWebsiteBaseOxr | {spec: {region = "eu-west-1", tags = {env = "prod"}}}
-    byName = _staticWebsiteByName(staticwebsite.composeStaticWebsite(oxr, {}))
+test_staticWebsite_public_access_block_blocks_all_public_access = lambda {
+    oxr = _staticWebsiteOxrFor({bucketName = "example-site", region = "eu-west-1"})
 
-    assert byName["bucket"].spec.forProvider.region == "eu-west-1"
-    assert byName["policy"].spec.forProvider.region == "eu-west-1"
-    assert byName["bucket"].spec.forProvider.tags == {env = "prod"}
-    assert "eu-west-1" in byName["distribution"].spec.forProvider.origin[0].domainName
+    result = staticwebsite.composeStaticWebsite(oxr, {})
+
+    block = _staticWebsiteFind(result, "BucketPublicAccessBlock")
+    assert block.apiVersion == "s3.aws.m.upbound.io/v1beta1"
+    assert block.metadata.annotations["krm.kcl.dev/composition-resource-name"] == "public-access-block"
+    assert block.spec.forProvider.bucket == "example-site"
+    assert block.spec.forProvider.region == "eu-west-1"
+    assert block.spec.forProvider.blockPublicAcls
+    assert block.spec.forProvider.blockPublicPolicy
+    assert block.spec.forProvider.ignorePublicAcls
+    assert block.spec.forProvider.restrictPublicBuckets
 }
 
-test_distribution_reads_bucket_through_the_oac = lambda {
-    byName = _staticWebsiteByName(staticwebsite.composeStaticWebsite(_staticWebsiteBaseOxr, {}))
+test_staticWebsite_origin_access_control_signs_s3_requests = lambda {
+    oxr = _staticWebsiteOxrFor({bucketName = "example-site"})
 
-    assert byName["distribution"].spec.forProvider.origin[0].originAccessControlIdRef.name == byName["oac"].metadata.name
-    assert byName["oac"].spec.forProvider.originAccessControlOriginType == "s3"
+    result = staticwebsite.composeStaticWebsite(oxr, {})
+
+    oac = _staticWebsiteFind(result, "OriginAccessControl")
+    assert oac.apiVersion == "cloudfront.aws.m.upbound.io/v1beta1"
+    assert oac.metadata.annotations["krm.kcl.dev/composition-resource-name"] == "origin-access-control"
+    assert oac.spec.forProvider.originAccessControlOriginType == "s3"
+    assert oac.spec.forProvider.signingBehavior == "always"
+    assert oac.spec.forProvider.signingProtocol == "sigv4"
 }
 
-test_index_and_error_documents = lambda {
-    oxr = _staticWebsiteBaseOxr | {spec: {indexDocument = "home.html", errorDocument = "oops.html"}}
-    forProvider = _staticWebsiteByName(staticwebsite.composeStaticWebsite(oxr, {}))["distribution"].spec.forProvider
+test_staticWebsite_ignores_extra_control_plane_fields_in_spec = lambda {
+    oxr = _staticWebsiteOxrFor({bucketName = "example-site", crossplane = {}})
 
-    assert forProvider.defaultRootObject == "home.html"
-    assert forProvider.customErrorResponse[0].responsePagePath == "/oops.html"
+    result = staticwebsite.composeStaticWebsite(oxr, {})
+
+    assert len(result) == 3
 }
 
-test_defaults_index_and_error_documents = lambda {
-    forProvider = _staticWebsiteByName(staticwebsite.composeStaticWebsite(_staticWebsiteBaseOxr, {}))["distribution"].spec.forProvider
+test_staticWebsite_empty_bucket_observation_does_not_compose_distribution = lambda {
+    oxr = _staticWebsiteOxrFor({bucketName = "example-site"})
 
-    assert forProvider.defaultRootObject == "index.html"
-    assert forProvider.customErrorResponse[0].responsePagePath == "/404.html"
+    result = staticwebsite.composeStaticWebsite(oxr, _staticWebsiteEmptyBucketOcds)
+
+    kinds = [r.kind for r in result]
+    assert "Distribution" not in kinds
+    assert "BucketPolicy" not in kinds
 }
 
-test_policy_is_a_json_string_without_source_arn_when_unobserved = lambda {
-    policy = _staticWebsiteByName(staticwebsite.composeStaticWebsite(_staticWebsiteBaseOxr, {}))["policy"].spec.forProvider.policy
+test_staticWebsite_distribution_waits_for_bucket_domain_and_oac_id = lambda {
+    oxr = _staticWebsiteOxrFor({bucketName = "example-site"})
 
-    assert typeof(policy) == "str", "the namespaced BucketPolicy takes a JSON string"
-    document = json.decode(policy)
-    assert document.Statement[0].Resource == "arn:aws:s3:::example-bucket/*"
-    assert "Condition" not in document.Statement[0]
+    result = staticwebsite.composeStaticWebsite(oxr, _staticWebsiteStorageOcds)
+
+    kinds = [r.kind for r in result]
+    assert "Distribution" in kinds
+    assert "BucketPolicy" not in kinds
+    dist = _staticWebsiteFind(result, "Distribution")
+    origin = dist.spec.forProvider.origin[0]
+    assert origin.domainName == "example-site.s3.us-east-1.amazonaws.com"
+    assert origin.originAccessControlId == "E2OACID"
+    assert dist.spec.forProvider.defaultCacheBehavior.targetOriginId == origin.originId
 }
 
-test_policy_restricts_to_distribution_once_observed = lambda {
-    result = staticwebsite.composeStaticWebsite(_staticWebsiteBaseOxr, _staticWebsiteObservedDistribution)
-    document = json.decode(_staticWebsiteByName(result)["policy"].spec.forProvider.policy)
+test_staticWebsite_distribution_serves_index_document_with_default_price_class = lambda {
+    oxr = _staticWebsiteOxrFor({bucketName = "example-site"})
 
-    assert document.Statement[0].Condition.StringEquals["AWS:SourceArn"] == "arn:aws:cloudfront::123456789012:distribution/E1234567890"
+    result = staticwebsite.composeStaticWebsite(oxr, _staticWebsiteStorageOcds)
+
+    dist = _staticWebsiteFind(result, "Distribution")
+    assert dist.spec.forProvider.enabled
+    assert dist.spec.forProvider.defaultRootObject == "index.html"
+    assert dist.spec.forProvider.priceClass == "PriceClass_100"
+    assert dist.spec.forProvider.viewerCertificate.cloudfrontDefaultCertificate
 }
 
-# --- With a zone: certificate stages ---
+test_staticWebsite_distribution_uses_custom_domain_with_certificate = lambda {
+    oxr = _staticWebsiteOxrFor({
+        bucketName = "example-site"
+        indexDocument = "home.html"
+        aliases = ["www.example.com"]
+        certificateArn = "arn:aws:acm:us-east-1:123456789012:certificate/abc"
+    })
 
-test_zoned_cold_start_requests_a_certificate_and_waits = lambda {
-    oxr = _staticWebsiteZonedOxr | {spec: {region = "eu-west-1"}}
-    byName = _staticWebsiteByName(staticwebsite.composeStaticWebsite(oxr, {}))
+    result = staticwebsite.composeStaticWebsite(oxr, _staticWebsiteStorageOcds)
 
-    assert sorted(byName) == ["bucket", "certificate", "oac", "policy"]
-    cert = byName["certificate"].spec.forProvider
-    assert cert.domainName == "www.example.com"
-    assert cert.validationMethod == "DNS"
-    assert cert.region == "us-east-1", "CloudFront only accepts certificates from us-east-1"
+    dist = _staticWebsiteFind(result, "Distribution")
+    assert dist.spec.forProvider.defaultRootObject == "home.html"
+    assert dist.spec.forProvider.aliases == ["www.example.com"]
+    assert dist.spec.forProvider.viewerCertificate.acmCertificateArn == "arn:aws:acm:us-east-1:123456789012:certificate/abc"
+    assert dist.spec.forProvider.viewerCertificate.sslSupportMethod == "sni-only"
 }
 
-test_validation_record_once_acm_publishes_it = lambda {
-    byName = _staticWebsiteByName(staticwebsite.composeStaticWebsite(_staticWebsiteZonedOxr, _staticWebsiteObservedCertPending))
+test_staticWebsite_distribution_omits_aliases_and_custom_errors_when_unset = lambda {
+    oxr = _staticWebsiteOxrFor({bucketName = "example-site"})
 
-    record = byName["cert-validation-record"].spec.forProvider
-    assert record.zoneId == "Z0510802PA88E7HZZ597"
-    assert record.name == "_abc.www.example.com."
-    assert record.type == "CNAME"
-    assert record.records == ["_xyz.acm-validations.aws."]
-    assert record.allowOverwrite == True
+    result = staticwebsite.composeStaticWebsite(oxr, _staticWebsiteStorageOcds)
 
-    validation = byName["cert-validation"].spec.forProvider
-    assert validation.certificateArnRef.name == byName["certificate"].metadata.name
-    assert validation.validationRecordFqdns == ["_abc.www.example.com."]
-    assert validation.region == "us-east-1"
-
-    assert "distribution" not in byName, "the distribution waits for an issued certificate"
+    dist = _staticWebsiteFind(result, "Distribution")
+    assert not dist.spec.forProvider.aliases
+    assert not dist.spec.forProvider.customErrorResponse
 }
 
-test_distribution_uses_certificate_once_issued = lambda {
-    byName = _staticWebsiteByName(staticwebsite.composeStaticWebsite(_staticWebsiteZonedOxr, _staticWebsiteObservedCertIssued))
-    forProvider = byName["distribution"].spec.forProvider
+test_staticWebsite_error_document_maps_403_and_404_to_it = lambda {
+    oxr = _staticWebsiteOxrFor({bucketName = "example-site", errorDocument = "404.html"})
 
-    assert forProvider.aliases == ["www.example.com"]
-    assert forProvider.viewerCertificate.acmCertificateArn == _staticWebsiteCertArn
-    assert forProvider.viewerCertificate.sslSupportMethod == "sni-only"
-    assert forProvider.viewerCertificate.minimumProtocolVersion == "TLSv1.2_2021"
-    assert "dns" not in byName, "the alias record waits for the distribution"
+    result = staticwebsite.composeStaticWebsite(oxr, _staticWebsiteStorageOcds)
+
+    dist = _staticWebsiteFind(result, "Distribution")
+    errors = dist.spec.forProvider.customErrorResponse
+    assert len(errors) == 2
+    assert errors[0].errorCode == 403
+    assert errors[1].errorCode == 404
+    assert errors[0].responsePagePath == "/404.html"
+    assert errors[0].responseCode == 404
 }
 
-# The Certificate's observed status lags until the provider's next poll, but the
-# CertificateValidation only becomes Ready once ACM has issued the certificate.
-test_distribution_proceeds_when_validation_is_ready = lambda {
-    ocds = _staticWebsiteObservedCertPending | {
-        "cert-validation" = {Resource.status.conditions = [{$type = "Ready", status = "True"}]}
-    }
-    byName = _staticWebsiteByName(staticwebsite.composeStaticWebsite(_staticWebsiteZonedOxr, ocds))
+test_staticWebsite_bucket_policy_grants_read_only_to_this_distribution = lambda {
+    oxr = _staticWebsiteOxrFor({bucketName = "example-site", region = "eu-west-1"})
 
-    assert "distribution" in byName
-    assert byName["distribution"].spec.forProvider.viewerCertificate.acmCertificateArn == _staticWebsiteCertArn
+    result = staticwebsite.composeStaticWebsite(oxr, _staticWebsiteAllOcds)
+
+    policyResource = _staticWebsiteFind(result, "BucketPolicy")
+    assert policyResource.metadata.annotations["krm.kcl.dev/composition-resource-name"] == "bucket-policy"
+    assert policyResource.spec.forProvider.bucket == "example-site"
+    assert policyResource.spec.forProvider.region == "eu-west-1"
+    policy = json.decode(policyResource.spec.forProvider.policy)
+    statement = policy.Statement[0]
+    assert statement.Effect == "Allow"
+    assert statement.Principal.Service == "cloudfront.amazonaws.com"
+    assert statement.Action == "s3:GetObject"
+    assert statement.Resource == "arn:aws:s3:::example-site/*"
+    assert statement.Condition.StringEquals["AWS:SourceArn"] == "arn:aws:cloudfront::123456789012:distribution/E1DIST"
 }
 
-test_distribution_waits_while_validation_is_not_ready = lambda {
-    ocds = _staticWebsiteObservedCertPending | {
-        "cert-validation" = {Resource.status.conditions = [{$type = "Ready", status = "False"}]}
-    }
-    assert "distribution" not in _staticWebsiteByName(staticwebsite.composeStaticWebsite(_staticWebsiteZonedOxr, ocds))
+test_staticWebsite_status_reports_domain_only_once_distribution_is_observed = lambda {
+    oxr = _staticWebsiteOxrFor({bucketName = "example-site"})
+
+    beforeDist = staticwebsite.composeStaticWebsite(oxr, _staticWebsiteStorageOcds)
+    assert "StaticWebsite" not in [r.kind for r in beforeDist]
+
+    result = staticwebsite.composeStaticWebsite(oxr, _staticWebsiteAllOcds)
+
+    xr = _staticWebsiteFind(result, "StaticWebsite")
+    assert xr.apiVersion == "platform.demotw.com/v1alpha1"
+    assert xr.metadata.name == "my-site"
+    assert xr.status.domainName == "d111abcdef8.cloudfront.net"
+    assert xr.status.distributionId == "E1DIST"
 }
 
-test_dns_record_aliases_the_distribution = lambda {
-    forProvider = _staticWebsiteByName(staticwebsite.composeStaticWebsite(_staticWebsiteZonedOxr, _staticWebsiteFullyObserved))["dns"].spec.forProvider
+test_staticWebsite_alias_records_point_each_alias_at_the_distribution = lambda {
+    oxr = _staticWebsiteOxrFor({
+        bucketName = "example-site"
+        aliases = ["test.trololo.demotw.com"]
+        certificateArn = "arn:aws:acm:us-east-1:123456789012:certificate/abc"
+        zoneId = "Z0510802PA88E7HZZ597"
+    })
 
-    assert forProvider.zoneId == "Z0510802PA88E7HZZ597"
-    assert forProvider.name == "www.example.com"
-    assert forProvider.type == "A", "`type` is reserved in KCL and must serialise back to `type`"
-    assert forProvider.alias.name == "d111111abcdef8.cloudfront.net"
-    assert forProvider.alias.zoneId == "Z2FDTNDATAQYW2"
+    result = staticwebsite.composeStaticWebsite(oxr, _staticWebsiteAllOcds)
+
+    records = [r for r in result if r.kind == "Record"]
+    assert len(records) == 1
+    record = records[0]
+    assert record.apiVersion == "route53.aws.m.upbound.io/v1beta1"
+    assert record.metadata.annotations["krm.kcl.dev/composition-resource-name"] == "alias-record-0"
+    assert record.spec.forProvider.zoneId == "Z0510802PA88E7HZZ597"
+    assert record.spec.forProvider.name == "test.trololo.demotw.com"
+    assert record.spec.forProvider.$type == "A"
+    assert record.spec.forProvider.alias.name == "d111abcdef8.cloudfront.net"
+    assert record.spec.forProvider.alias.zoneId == "Z2FDTNDATAQYW2"
+    assert record.spec.forProvider.alias.evaluateTargetHealth == False
 }
 
-# --- Status ---
+test_staticWebsite_no_alias_records_without_zone_or_before_distribution_is_observed = lambda {
+    withoutZone = _staticWebsiteOxrFor({
+        bucketName = "example-site"
+        aliases = ["test.trololo.demotw.com"]
+        certificateArn = "arn:aws:acm:us-east-1:123456789012:certificate/abc"
+    })
+    withZone = _staticWebsiteOxrFor({
+        bucketName = "example-site"
+        aliases = ["test.trololo.demotw.com"]
+        certificateArn = "arn:aws:acm:us-east-1:123456789012:certificate/abc"
+        zoneId = "Z0510802PA88E7HZZ597"
+    })
 
-test_status_with_custom_domain = lambda {
-    result = staticwebsite.composeStaticWebsite(_staticWebsiteZonedOxr, _staticWebsiteFullyObserved)
-    xrs = [r for r in result if r.kind == "StaticWebsite"]
+    noZoneResult = staticwebsite.composeStaticWebsite(withoutZone, _staticWebsiteAllOcds)
+    assert "Record" not in [r.kind for r in noZoneResult]
 
-    assert len(xrs) == 1
-    assert xrs[0].status.url == "https://www.example.com"
-    assert xrs[0].status.distributionDomainName == "d111111abcdef8.cloudfront.net"
-    assert xrs[0].status.certificateArn == _staticWebsiteCertArn
-}
-
-test_status_without_custom_domain_points_at_cloudfront = lambda {
-    xrs = [r for r in staticwebsite.composeStaticWebsite(_staticWebsiteBaseOxr, _staticWebsiteObservedDistribution) if r.kind == "StaticWebsite"]
-
-    assert xrs[0].status.url == "https://d111111abcdef8.cloudfront.net"
-}
-
-test_no_status_before_the_distribution_exists = lambda {
-    result = staticwebsite.composeStaticWebsite(_staticWebsiteBaseOxr, {})
-    assert len([r for r in result if r.kind == "StaticWebsite"]) == 0
-}
-
-test_extra_spec_fields_are_accepted = lambda {
-    oxr = _staticWebsiteBaseOxr | {spec: {somethingCrossplaneAdded = "ok"}}
-    assert len(staticwebsite.composeStaticWebsite(oxr, {})) == 4
+    beforeDistResult = staticwebsite.composeStaticWebsite(withZone, _staticWebsiteStorageOcds)
+    assert "Record" not in [r.kind for r in beforeDistResult]
 }
