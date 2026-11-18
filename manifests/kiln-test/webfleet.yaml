@@ -1,0 +1,33 @@
+apiVersion: platform.demotw.com/v1alpha1
+kind: WebFleet
+metadata:
+  name: kiln-test-fleet
+  namespace: kiln-test
+spec:
+  name: kiln-test
+  domain:
+    name: fleet.kiln-test.demotw.com
+    hostedZoneId: Z0182862241741A14JZDA
+  network:
+    vpcId: vpc-0d1a71fdd00386682
+    publicSubnetIds:
+      - subnet-0dd1501720b3d186f
+      - subnet-053b0cb241f26ca4c
+    privateSubnetIds:
+      - subnet-03fe35a36c221d2fb
+      - subnet-05fb07c62d75e993b
+  region: ap-southeast-1
+  imageId: ami-0b220b5c3dad9b55a
+  instanceType: t3.micro
+  minSize: 1
+  maxSize: 2
+  port: 80
+  healthCheckPath: /
+  userData: |
+    #!/bin/bash
+    set -euxo pipefail
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update
+    apt-get install -y apache2
+    echo "kiln test fleet" > /var/www/html/index.html
+    systemctl enable --now apache2

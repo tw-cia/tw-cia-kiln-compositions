@@ -115,6 +115,9 @@ jobs:
           path: manifests-download
       - name: apply manifests
         run: kubectl apply -R -f manifests-download
+      - uses: actions/checkout@v7
+      - name: apply kiln-test manifests
+        run: kubectl apply -f manifests/kiln-test/
       - name: list all
         run: kubectl get all --all-namespaces
       - name: list matching claims

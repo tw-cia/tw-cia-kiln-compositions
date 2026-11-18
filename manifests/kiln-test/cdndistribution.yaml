@@ -1,0 +1,12 @@
+apiVersion: platform.demotw.com/v1alpha1
+kind: CdnDistribution
+metadata:
+  name: kiln-test-cdn
+  namespace: kiln-test
+spec:
+  domain:
+    name: kiln-test.demotw.com
+    hostedZoneId: Z0182862241741A14JZDA
+  origin:
+    domainName: fleet.kiln-test.demotw.com
+  priceClass: PriceClass_100
