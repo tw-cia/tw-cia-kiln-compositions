@@ -527,6 +527,15 @@ spec:
           # webFleetDnsNames maps each web fleet's application name to its load balancer's
           # DNS name, for the fleets whose load balancer exists.
 
+          # A static website: files in a private S3 bucket, served over HTTPS at domainName
+          # by a CloudFront distribution. Only that distribution may read the bucket, through
+          # an origin access control. The certificate is a TlsCertificate for domainName,
+          # validated by DNS in hostedZoneId, and the domain gets an alias record to the
+          # distribution. bucketName must be unique across all of AWS.
+
+          # distributionDomainName is the CloudFront address (such as d111111abcdef8.cloudfront.net)
+          # once the distribution has one.
+
           # CdnDistribution: a CloudFront distribution in front of an origin (such as the
           # load balancer of a WebFleet). The origin is reached over HTTP. Viewers are
           # redirected to HTTPS, and every request is forwarded to the origin with

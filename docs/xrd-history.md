@@ -636,3 +636,36 @@ check, because the creation path does not exist yet.
 - `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
 - `M manifests/crossplane-compositions/webfleet/composition.yaml`
 - `M manifests/crossplane-compositions/webfleet/xrd.yaml`
+
+### 19. StaticWebSite: the first version, from the first request in this session
+*2026-11-18T16:07:02 UTC*
+
+Session 532bc794, first request (2026-11-18, 16:02-16:07). The user asked for a
+CloudFront distribution with an ACM certificate (DNS validated) in front of an
+S3 bucket, with a bucket policy that allows only CloudFront-signed requests.
+
+What changed: staticwebsite.k and staticwebsite_test.k (new), a StaticWebsite
+spec with flat fields (domainName, hostedZoneId, bucketName, region), a
+status with distributionDomainName, and render fixtures for three observed
+stages.
+
+Reasoning: the certificate is a child TlsCertificate, the bucket is private
+and reached through an origin access control, and the bucket policy waits
+for the distribution's ARN. Each stage reads only what it needs from ocds.
+
+Result: 86 of 86 tests pass in this reconstruction.
+
+**Tests:** PASS: 86/86
+**Generation:** ok
+
+**Files changed:**
+- `M kcl-scripts/StaticWebsite_test.k`
+- `M kcl-scripts/schemas_compositions.k`
+- `M kcl-scripts/staticwebsite.k`
+- `M manifests/crossplane-compositions/cdndistribution/composition.yaml`
+- `M manifests/crossplane-compositions/environment/composition.yaml`
+- `A manifests/crossplane-compositions/staticwebsite/composition.yaml`
+- `M manifests/crossplane-compositions/staticwebsite/xrd.yaml`
+- `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
+- `M manifests/crossplane-compositions/webfleet/composition.yaml`
+- `M render-fixtures/staticwebsite/xr.yaml`

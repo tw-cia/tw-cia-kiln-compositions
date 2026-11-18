@@ -1,246 +1,266 @@
 import json
+import .schemas_compositions
 import .staticwebsite
 
-_staticWebsiteOxr = {
+_staticWebSiteOxr = {
     apiVersion = "platform.demotw.com/v1alpha1"
-    kind = "StaticWebsite"
-    metadata.name = "site"
-    spec = {domainName = "site.example.com", hostedZoneId = "Z123EXAMPLE"}
+    kind = "StaticWebSite"
+    metadata = {name = "docs-site"}
+    spec = {
+        domainName = "docs.example.com"
+        hostedZoneId = "Z0123456789ABCDEFGHIJ"
+        bucketName = "docs-example-com-assets"
+    }
 }
 
-_staticWebsiteCertificateArn = "arn:aws:acm:us-east-1:111111111111:certificate/example"
+_staticWebSiteCertArn = "arn:aws:acm:us-east-1:111111111111:certificate/example"
+_staticWebSiteBucketDomain = "docs-example-com-assets.s3.us-east-1.amazonaws.com"
+_staticWebSiteDistributionArn = "arn:aws:cloudfront::111111111111:distribution/E2EXAMPLE"
 
-# The bucket exists and reports its regional domain name.
-_staticWebsiteBucketObserved = {Resource = {status = {atProvider = {
-    arn = "arn:aws:s3:::site-example-com"
-    bucketRegionalDomainName = "site-example-com.s3.us-east-1.amazonaws.com"
-    id = "site-example-com"
-}}}}
-
-# The origin access control exists and reports its id.
-_staticWebsiteOacObserved = {Resource = {status = {atProvider = {id = "E2OACEXAMPLE"}}}}
-
-# The certificate child has an ARN but is not validated yet.
-_staticWebsiteCertificatePending = {Resource = {status = {
-    certificateArn = _staticWebsiteCertificateArn
-    validated = False
-}}}
-
-# The certificate child reports validated. It carries conditions too, as a real XR does.
-_staticWebsiteCertificateValidated = {Resource = {status = {
-    certificateArn = _staticWebsiteCertificateArn
-    validated = True
-    conditions = [{"type" = "Ready", status = "True"}]
-}}}
-
-# The distribution exists and reports its ARN and CloudFront domain.
-_staticWebsiteDistributionObserved = {Resource = {status = {atProvider = {
-    arn = "arn:aws:cloudfront::111111111111:distribution/EDISTEXAMPLE"
-    domainName = "d111abcdef8.cloudfront.net"
-    hostedZoneId = "Z2FDTNDATAQYW2"
-    id = "EDISTEXAMPLE"
-}}}}
-
-_staticWebsiteReadyToDistribute = {
-    bucket = _staticWebsiteBucketObserved
-    "origin-access-control" = _staticWebsiteOacObserved
-    certificate = _staticWebsiteCertificateValidated
+# Observed stages. Each is a snapshot of everything observed at that point.
+_staticWebSiteOcdsBucket = {
+    bucket = {Resource = {status = {atProvider = {
+        arn = "arn:aws:s3:::docs-example-com-assets"
+        bucketRegionalDomainName = _staticWebSiteBucketDomain
+    }}}}
 }
 
-_staticWebsiteFullyObserved = {
-    bucket = _staticWebsiteBucketObserved
-    "origin-access-control" = _staticWebsiteOacObserved
-    certificate = _staticWebsiteCertificateValidated
-    distribution = _staticWebsiteDistributionObserved
+_staticWebSiteOcdsOac = {
+    "origin-access-control" = {Resource = {status = {atProvider = {id = "E1OACEXAMPLE"}}}}
 }
 
-_staticWebsiteKinds = lambda result -> [str] {
-    [r.kind for r in result]
+_staticWebSiteOcdsCertPending = {
+    certificate = {Resource = {status = {certificateArn = _staticWebSiteCertArn, validated = False, conditions = [{"type" = "Ready", status = "False"}]}}}
 }
 
-# Cold start: nothing observed, so the certificate, bucket and access control are requested.
-test_staticWebsite_cold_start_composes_certificate_bucket_and_access_control = lambda {
-    result = staticwebsite.composeStaticWebsite(_staticWebsiteOxr, {})
-
-    assert _staticWebsiteKinds(result) == ["TlsCertificate", "Bucket", "BucketPublicAccessBlock", "OriginAccessControl"]
+_staticWebSiteOcdsCertValidated = {
+    certificate = {Resource = {status = {certificateArn = _staticWebSiteCertArn, validated = True, conditions = [{"type" = "Ready", status = "True"}]}}}
 }
 
-test_staticWebsite_requests_a_us_east_1_certificate_for_the_domain = lambda {
-    result = staticwebsite.composeStaticWebsite(_staticWebsiteOxr, {})
+_staticWebSiteOcdsReady = {
+    **_staticWebSiteOcdsBucket
+    **_staticWebSiteOcdsOac
+    **_staticWebSiteOcdsCertValidated
+}
 
-    cert = result[0]
+_staticWebSiteOcdsDeployed = {
+    **_staticWebSiteOcdsReady
+    distribution = {Resource = {status = {atProvider = {
+        arn = _staticWebSiteDistributionArn
+        domainName = "d111111abcdef8.cloudfront.net"
+    }}}}
+}
+
+# The composed resources (everything but the XR status item), and the XR status item.
+_staticWebSiteComposed = lambda resources {
+    [r for r in resources if r.kind != "StaticWebSite"]
+}
+
+_staticWebSiteXr = lambda resources {
+    [r for r in resources if r.kind == "StaticWebSite"]
+}
+
+_staticWebSiteNamed = lambda resources, name {
+    [r for r in _staticWebSiteComposed(resources) if r.metadata.annotations["krm.kcl.dev/composition-resource-name"] == name]
+}
+
+_staticWebSiteKind = lambda resources, kind {
+    [r for r in _staticWebSiteComposed(resources) if r.kind == kind]
+}
+
+# --- cold start -------------------------------------------------------------
+
+test_staticWebSite_cold_start_emits_certificate_bucket_and_access_control = lambda {
+    result = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, {})
+
+    assert len(_staticWebSiteComposed(result)) == 3, "cold start: certificate, bucket and origin access control"
+    assert len(_staticWebSiteKind(result, "TlsCertificate")) == 1
+    assert len(_staticWebSiteKind(result, "Bucket")) == 1
+    assert len(_staticWebSiteKind(result, "OriginAccessControl")) == 1
+    assert len(_staticWebSiteXr(result)) == 0, "cold start reports no status"
+}
+
+test_staticWebSite_nothing_depending_on_observed_state_is_emitted_cold = lambda {
+    result = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, {})
+
+    assert len(_staticWebSiteKind(result, "PublicAccessBlock")) == 0, "waits for the bucket"
+    assert len(_staticWebSiteKind(result, "Distribution")) == 0, "waits for the bucket, the access control and the certificate"
+    assert len(_staticWebSiteKind(result, "BucketPolicy")) == 0, "waits for the distribution"
+    assert len(_staticWebSiteKind(result, "Record")) == 0, "waits for the distribution"
+}
+
+# --- certificate -------------------------------------------------------------
+
+test_staticWebSite_certificate_is_a_child_tls_certificate_for_the_domain = lambda {
+    result = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, {})
+    cert = _staticWebSiteNamed(result, "certificate")[0]
+
     assert cert.apiVersion == "platform.demotw.com/v1alpha1"
     assert cert.kind == "TlsCertificate"
-    assert cert.metadata.annotations["krm.kcl.dev/composition-resource-name"] == "certificate"
-    assert cert.spec.domainName == "site.example.com"
-    assert cert.spec.hostedZoneId == "Z123EXAMPLE"
-    assert cert.spec.region == "us-east-1"
+    assert cert.spec.domainName == "docs.example.com"
+    assert cert.spec.hostedZoneId == "Z0123456789ABCDEFGHIJ"
+    assert cert.spec.region == "us-east-1", "CloudFront only takes certificates from us-east-1"
 }
 
-test_staticWebsite_bucket_is_named_from_the_domain_by_default = lambda {
-    result = staticwebsite.composeStaticWebsite(_staticWebsiteOxr, {})
+# --- bucket ------------------------------------------------------------------
 
-    bucket = result[1]
+test_staticWebSite_bucket_is_named_by_the_spec_in_the_region = lambda {
+    result = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, {})
+    bucket = _staticWebSiteNamed(result, "bucket")[0]
+
     assert bucket.apiVersion == "s3.aws.m.upbound.io/v1beta1"
     assert bucket.kind == "Bucket"
-    assert bucket.metadata.annotations["crossplane.io/external-name"] == "site-example-com"
+    assert bucket.metadata.annotations["crossplane.io/external-name"] == "docs-example-com-assets"
     assert bucket.spec.forProvider.region == "us-east-1"
 }
 
-test_staticWebsite_bucket_name_can_be_set = lambda {
-    oxr = {
-        apiVersion = "platform.demotw.com/v1alpha1"
-        kind = "StaticWebsite"
-        metadata.name = "site"
-        spec = {domainName = "site.example.com", hostedZoneId = "Z123EXAMPLE", bucketName = "my-site-bucket"}
+test_staticWebSite_region_defaults_to_us_east_1 = lambda {
+    spec = schemas_compositions.StaticWebSiteSpec {
+        domainName = "docs.example.com"
+        hostedZoneId = "Z0123456789ABCDEFGHIJ"
+        bucketName = "docs-example-com-assets"
     }
 
-    result = staticwebsite.composeStaticWebsite(oxr, {})
-
-    assert result[1].metadata.annotations["crossplane.io/external-name"] == "my-site-bucket"
+    assert spec.region == "us-east-1"
 }
 
-test_staticWebsite_bucket_region_can_be_set = lambda {
+test_staticWebSite_bucket_region_passes_through = lambda {
     oxr = {
         apiVersion = "platform.demotw.com/v1alpha1"
-        kind = "StaticWebsite"
-        metadata.name = "site"
-        spec = {domainName = "site.example.com", hostedZoneId = "Z123EXAMPLE", bucketRegion = "eu-west-2"}
+        kind = "StaticWebSite"
+        metadata = {name = "docs-site"}
+        spec = {
+            domainName = "docs.example.com"
+            hostedZoneId = "Z0123456789ABCDEFGHIJ"
+            bucketName = "docs-example-com-assets"
+            region = "eu-west-1"
+        }
     }
+    result = staticwebsite.composeStaticWebSite(oxr, {})
 
-    result = staticwebsite.composeStaticWebsite(oxr, {})
-
-    assert result[1].spec.forProvider.region == "eu-west-2"
+    assert _staticWebSiteNamed(result, "bucket")[0].spec.forProvider.region == "eu-west-1"
 }
 
-test_staticWebsite_blocks_all_public_access_to_the_bucket = lambda {
-    result = staticwebsite.composeStaticWebsite(_staticWebsiteOxr, {})
+# --- origin access control ---------------------------------------------------
 
-    block = result[2]
-    assert block.kind == "BucketPublicAccessBlock"
-    assert block.spec.forProvider.bucket == "site-example-com"
-    assert block.spec.forProvider.blockPublicAcls
-    assert block.spec.forProvider.blockPublicPolicy
-    assert block.spec.forProvider.ignorePublicAcls
-    assert block.spec.forProvider.restrictPublicBuckets
-}
+test_staticWebSite_origin_access_control_signs_s3_requests_with_sigv4 = lambda {
+    result = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, {})
+    oac = _staticWebSiteNamed(result, "origin-access-control")[0]
 
-test_staticWebsite_origin_access_control_signs_s3_requests = lambda {
-    result = staticwebsite.composeStaticWebsite(_staticWebsiteOxr, {})
-
-    oac = result[3]
     assert oac.apiVersion == "cloudfront.aws.m.upbound.io/v1beta1"
     assert oac.kind == "OriginAccessControl"
-    assert oac.spec.forProvider.name == "site-example-com"
     assert oac.spec.forProvider.originAccessControlOriginType == "s3"
     assert oac.spec.forProvider.signingBehavior == "always"
     assert oac.spec.forProvider.signingProtocol == "sigv4"
 }
 
-# The bucket and access control are ready, but the certificate is not validated yet.
-test_staticWebsite_no_distribution_until_the_certificate_is_validated = lambda {
-    ocds = {
-        bucket = _staticWebsiteBucketObserved
-        "origin-access-control" = _staticWebsiteOacObserved
-        certificate = _staticWebsiteCertificatePending
-    }
+# --- public access block -----------------------------------------------------
 
-    result = staticwebsite.composeStaticWebsite(_staticWebsiteOxr, ocds)
+test_staticWebSite_public_access_is_blocked_once_the_bucket_exists = lambda {
+    result = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, _staticWebSiteOcdsBucket)
+    block = _staticWebSiteKind(result, "BucketPublicAccessBlock")[0]
 
-    assert "Distribution" not in _staticWebsiteKinds(result)
+    assert block.apiVersion == "s3.aws.m.upbound.io/v1beta1"
+    assert block.spec.forProvider.bucket == "docs-example-com-assets"
+    assert block.spec.forProvider.blockPublicAcls == True
+    assert block.spec.forProvider.blockPublicPolicy == True
+    assert block.spec.forProvider.ignorePublicAcls == True
+    assert block.spec.forProvider.restrictPublicBuckets == True
 }
 
-test_staticWebsite_distribution_serves_the_bucket_through_oac_with_the_certificate = lambda {
-    result = staticwebsite.composeStaticWebsite(_staticWebsiteOxr, _staticWebsiteReadyToDistribute)
+# --- distribution ------------------------------------------------------------
 
-    dist = [r for r in result if r.kind == "Distribution"][0]
+test_staticWebSite_distribution_waits_for_the_bucket_access_control_and_certificate = lambda {
+    onlyBucket = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, _staticWebSiteOcdsBucket)
+    bucketAndOac = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, {**_staticWebSiteOcdsBucket, **_staticWebSiteOcdsOac})
+    bucketOacPending = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, {**_staticWebSiteOcdsReady, **_staticWebSiteOcdsCertPending})
+
+    assert len(_staticWebSiteKind(onlyBucket, "Distribution")) == 0, "no access control or certificate yet"
+    assert len(_staticWebSiteKind(bucketAndOac, "Distribution")) == 0, "certificate not known yet"
+    assert len(_staticWebSiteKind(bucketOacPending, "Distribution")) == 0, "certificate not validated yet"
+}
+
+test_staticWebSite_distribution_is_emitted_when_ready = lambda {
+    result = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, _staticWebSiteOcdsReady)
+    dist = _staticWebSiteKind(result, "Distribution")[0]
+
+    assert len(_staticWebSiteKind(result, "Distribution")) == 1
     assert dist.apiVersion == "cloudfront.aws.m.upbound.io/v1beta1"
     assert dist.metadata.annotations["krm.kcl.dev/composition-resource-name"] == "distribution"
-    forProvider = dist.spec.forProvider
-    assert forProvider.aliases == ["site.example.com"]
-    assert forProvider.enabled
-    assert forProvider.defaultRootObject == "index.html"
-    assert forProvider.origin[0].domainName == "site-example-com.s3.us-east-1.amazonaws.com"
-    assert forProvider.origin[0].originAccessControlId == "E2OACEXAMPLE"
-    assert forProvider.defaultCacheBehavior.targetOriginId == forProvider.origin[0].originId
-    assert forProvider.defaultCacheBehavior.viewerProtocolPolicy == "redirect-to-https"
-    assert forProvider.viewerCertificate.acmCertificateArn == _staticWebsiteCertificateArn
+}
+
+test_staticWebSite_origin_is_the_bucket_through_the_access_control = lambda {
+    result = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, _staticWebSiteOcdsReady)
+    origin = _staticWebSiteKind(result, "Distribution")[0].spec.forProvider.origin[0]
+
+    assert origin.domainName == _staticWebSiteBucketDomain, "the bucket's regional domain name"
+    assert origin.originAccessControlId == "E1OACEXAMPLE"
+    assert origin.originId == "s3-origin"
+}
+
+test_staticWebSite_distribution_serves_https_on_the_domain_with_the_acm_certificate = lambda {
+    result = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, _staticWebSiteOcdsReady)
+    forProvider = _staticWebSiteKind(result, "Distribution")[0].spec.forProvider
+
+    assert forProvider.aliases == ["docs.example.com"]
+    assert forProvider.viewerCertificate.acmCertificateArn == _staticWebSiteCertArn
     assert forProvider.viewerCertificate.sslSupportMethod == "sni-only"
+    assert forProvider.viewerCertificate.minimumProtocolVersion == "TLSv1.2_2021"
+    assert forProvider.defaultCacheBehavior.viewerProtocolPolicy == "redirect-to-https"
+    assert forProvider.defaultRootObject == "index.html"
+    assert forProvider.enabled == True
 }
 
-test_staticWebsite_index_document_can_be_set = lambda {
-    oxr = {
-        apiVersion = "platform.demotw.com/v1alpha1"
-        kind = "StaticWebsite"
-        metadata.name = "site"
-        spec = {domainName = "site.example.com", hostedZoneId = "Z123EXAMPLE", indexDocument = "home.html"}
-    }
+# --- bucket policy -----------------------------------------------------------
 
-    result = staticwebsite.composeStaticWebsite(oxr, _staticWebsiteReadyToDistribute)
+test_staticWebSite_no_bucket_policy_until_the_distribution_is_observed = lambda {
+    result = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, _staticWebSiteOcdsReady)
 
-    dist = [r for r in result if r.kind == "Distribution"][0]
-    assert dist.spec.forProvider.defaultRootObject == "home.html"
+    assert len(_staticWebSiteKind(result, "BucketPolicy")) == 0, "the policy names the distribution's ARN"
 }
 
-# The distribution is created but has not reported its ARN or domain yet: no policy, records or status.
-test_staticWebsite_no_policy_records_or_status_until_the_distribution_is_observed = lambda {
-    result = staticwebsite.composeStaticWebsite(_staticWebsiteOxr, _staticWebsiteReadyToDistribute)
-
-    kinds = _staticWebsiteKinds(result)
-    assert "BucketPolicy" not in kinds
-    assert "Record" not in kinds
-    assert "StaticWebsite" not in kinds
-}
-
-test_staticWebsite_bucket_policy_lets_only_this_distribution_read = lambda {
-    result = staticwebsite.composeStaticWebsite(_staticWebsiteOxr, _staticWebsiteFullyObserved)
-
-    policyResource = [r for r in result if r.kind == "BucketPolicy"][0]
-    assert policyResource.spec.forProvider.bucket == "site-example-com"
+test_staticWebSite_bucket_policy_lets_only_this_distribution_read = lambda {
+    result = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, _staticWebSiteOcdsDeployed)
+    policyResource = _staticWebSiteKind(result, "BucketPolicy")[0]
     policy = json.decode(policyResource.spec.forProvider.policy)
     statement = policy.Statement[0]
+
+    assert policyResource.spec.forProvider.bucket == "docs-example-com-assets"
     assert statement.Effect == "Allow"
-    assert statement.Principal.Service == "cloudfront.amazonaws.com"
+    assert statement.Principal.Service == "cloudfront.amazonaws.com", "CloudFront's service principal, not anyone"
     assert statement.Action == ["s3:GetObject"]
-    assert statement.Resource == "arn:aws:s3:::site-example-com/*"
-    assert statement.Condition.StringEquals["AWS:SourceArn"] == "arn:aws:cloudfront::111111111111:distribution/EDISTEXAMPLE"
+    assert statement.Resource == "arn:aws:s3:::docs-example-com-assets/*"
+    assert statement.Condition.StringEquals["AWS:SourceArn"] == _staticWebSiteDistributionArn, "signed requests from this distribution only"
 }
 
-test_staticWebsite_writes_ipv4_and_ipv6_alias_records_for_the_domain = lambda {
-    result = staticwebsite.composeStaticWebsite(_staticWebsiteOxr, _staticWebsiteFullyObserved)
+# --- alias record ------------------------------------------------------------
 
-    records = [r for r in result if r.kind == "Record"]
-    assert len(records) == 2
-    assert [r.spec.forProvider["type"] for r in records] == ["A", "AAAA"]
-    assert all_true([r.apiVersion == "route53.aws.m.upbound.io/v1beta1" for r in records])
-    assert all_true([r.spec.forProvider.zoneId == "Z123EXAMPLE" for r in records])
-    assert all_true([r.spec.forProvider.name == "site.example.com" for r in records])
-    assert all_true([r.spec.forProvider.alias.name == "d111abcdef8.cloudfront.net" for r in records])
-    assert all_true([r.spec.forProvider.alias.zoneId == "Z2FDTNDATAQYW2" for r in records])
-    assert all_true([not r.spec.forProvider.alias.evaluateTargetHealth for r in records])
+test_staticWebSite_alias_record_points_the_domain_at_the_distribution = lambda {
+    result = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, _staticWebSiteOcdsDeployed)
+    record = _staticWebSiteKind(result, "Record")[0]
+
+    assert len(_staticWebSiteKind(result, "Record")) == 1
+    assert record.apiVersion == "route53.aws.m.upbound.io/v1beta1"
+    assert record.spec.forProvider.zoneId == "Z0123456789ABCDEFGHIJ"
+    assert record.spec.forProvider.name == "docs.example.com"
+    assert record.spec.forProvider.$type == "A"
+    assert record.spec.forProvider.alias.name == "d111111abcdef8.cloudfront.net"
+    assert record.spec.forProvider.alias.zoneId == "Z2FDTNDATAQYW2", "CloudFront's fixed hosted zone ID"
 }
 
-test_staticWebsite_reports_url_and_distribution_domain_once_observed = lambda {
-    result = staticwebsite.composeStaticWebsite(_staticWebsiteOxr, _staticWebsiteFullyObserved)
+# --- status ------------------------------------------------------------------
 
-    xr = result[-1]
+test_staticWebSite_no_status_before_the_distribution_has_a_domain_name = lambda {
+    result = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, _staticWebSiteOcdsReady)
+
+    assert len(_staticWebSiteXr(result)) == 0
+}
+
+test_staticWebSite_reports_the_distribution_domain_name_once_observed = lambda {
+    result = staticwebsite.composeStaticWebSite(_staticWebSiteOxr, _staticWebSiteOcdsDeployed)
+    xr = _staticWebSiteXr(result)[0]
+
+    assert xr.kind == "StaticWebSite"
     assert xr.apiVersion == "platform.demotw.com/v1alpha1"
-    assert xr.kind == "StaticWebsite"
-    assert xr.metadata.name == "site"
-    assert xr.status.url == "https://site.example.com"
-    assert xr.status.distributionDomainName == "d111abcdef8.cloudfront.net"
-}
-
-# A bucket and access control that exist but have reported no fields yet count as not observed.
-test_staticWebsite_empty_atprovider_is_treated_as_not_observed = lambda {
-    ocds = {
-        bucket = {Resource = {status = {atProvider = {}}}}
-        "origin-access-control" = {Resource = {status = {atProvider = {}}}}
-        certificate = _staticWebsiteCertificateValidated
-    }
-
-    result = staticwebsite.composeStaticWebsite(_staticWebsiteOxr, ocds)
-
-    assert "Distribution" not in _staticWebsiteKinds(result)
-    assert _staticWebsiteKinds(result) == _staticWebsiteKinds(staticwebsite.composeStaticWebsite(_staticWebsiteOxr, {}))
+    assert xr.status.distributionDomainName == "d111111abcdef8.cloudfront.net"
 }

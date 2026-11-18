@@ -115,6 +115,15 @@ spec:
           schema EnvironmentStatus:
               webFleetDnsNames?: {str:str}
 
+          # A static website: files in a private S3 bucket, served over HTTPS at domainName
+          # by a CloudFront distribution. Only that distribution may read the bucket, through
+          # an origin access control. The certificate is a TlsCertificate for domainName,
+          # validated by DNS in hostedZoneId, and the domain gets an alias record to the
+          # distribution. bucketName must be unique across all of AWS.
+
+          # distributionDomainName is the CloudFront address (such as d111111abcdef8.cloudfront.net)
+          # once the distribution has one.
+
           # Environment: a named network (such as prod) with the applications that run in
           # it. Each application is a WebFleet child XR, placed in the environment's
           # subnets, and named "<environment>-<application>" in AWS. The environment reports

@@ -1,0 +1,814 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: staticwebsite-kcl-first
+spec:
+  compositeTypeRef:
+    apiVersion: platform.example.com/v1alpha1
+    kind: StaticWebSite
+  mode: Pipeline
+  pipeline:
+  - step: compose
+    functionRef:
+      name: function-kcl
+    input:
+      apiVersion: krm.kcl.dev/v1alpha1
+      kind: KCLInput
+      spec:
+        source: |
+          # Curated provider schemas. `kiln import <crd>` appends here.
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderAlias:
+              evaluateTargetHealth?: bool
+              name?: str
+              zoneId?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderCidrRoutingPolicy:
+              collectionId?: str
+              locationName?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderFailoverRoutingPolicy:
+              $type?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeolocationRoutingPolicy:
+              continent?: str
+              country?: str
+              subdivision?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeoproximityRoutingPolicy:
+              awsRegion?: str
+              bias?: float
+              coordinates?: [Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeoproximityRoutingPolicyCoordinates]
+              localZoneGroup?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDRef:
+              name: str
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDRefPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDSelectorPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderLatencyRoutingPolicy:
+              region: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsRefs:
+              name: str
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsRefsPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsSelectorPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderWeightedRoutingPolicy:
+              weight?: float
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDRef:
+              name: str
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDRefPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDSelectorPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeoproximityRoutingPolicyCoordinates:
+              latitude?: str
+              longitude?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsRefsPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProvider:
+              alias?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderAlias
+              allowOverwrite?: bool
+              cidrRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderCidrRoutingPolicy
+              failoverRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderFailoverRoutingPolicy
+              geolocationRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeolocationRoutingPolicy
+              geoproximityRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeoproximityRoutingPolicy
+              healthCheckId?: str
+              healthCheckIdRef?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDRef
+              healthCheckIdSelector?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDSelector
+              latencyRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderLatencyRoutingPolicy
+              multivalueAnswerRoutingPolicy?: bool
+              name?: str
+              records?: [str]
+              recordsRefs?: [Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsRefs]
+              recordsSelector?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsSelector
+              setIdentifier?: str
+              ttl?: float
+              $type?: str
+              weightedRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderWeightedRoutingPolicy
+              zoneId?: str
+              zoneIdRef?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDRef
+              zoneIdSelector?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDSelector
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderCustomOriginConfigOriginMtlsConfig:
+              clientCertificateArn?: str
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderDefaultCacheBehaviorForwardedValues:
+              cookies?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderForwardedValuesCookies
+              headers?: [str]
+              queryString?: bool
+              queryStringCacheKeys?: [str]
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderDefaultCacheBehaviorFunctionAssociation:
+              eventType?: str
+              functionArn?: str
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderDefaultCacheBehaviorGrpcConfig:
+              enabled?: bool
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderDefaultCacheBehaviorLambdaFunctionAssociation:
+              eventType?: str
+              includeBody?: bool
+              lambdaArn?: str
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderCacheTagConfig:
+              headerName?: str
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderConnectionFunctionAssociation:
+              id?: str
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderCustomErrorResponse:
+              errorCachingMinTtl?: float
+              errorCode?: float
+              responseCode?: float
+              responsePagePath?: str
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderDefaultCacheBehavior:
+              allowedMethods?: [str]
+              cachePolicyId?: str
+              cachedMethods?: [str]
+              compress?: bool
+              defaultTtl?: float
+              fieldLevelEncryptionId?: str
+              forwardedValues?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderDefaultCacheBehaviorForwardedValues
+              functionAssociation?: [CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderDefaultCacheBehaviorFunctionAssociation]
+              grpcConfig?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderDefaultCacheBehaviorGrpcConfig
+              lambdaFunctionAssociation?: [CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderDefaultCacheBehaviorLambdaFunctionAssociation]
+              maxTtl?: float
+              minTtl?: float
+              originRequestPolicyId?: str
+              realtimeLogConfigArn?: str
+              responseHeadersPolicyId?: str
+              smoothStreaming?: bool
+              targetOriginId?: str
+              trustedKeyGroups?: [str]
+              trustedSigners?: [str]
+              viewerProtocolPolicy?: str
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderLoggingConfig:
+              bucket?: str
+              includeCookies?: bool
+              prefix?: str
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOrderedCacheBehavior:
+              allowedMethods?: [str]
+              cachePolicyId?: str
+              cachedMethods?: [str]
+              compress?: bool
+              defaultTtl?: float
+              fieldLevelEncryptionId?: str
+              forwardedValues?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOrderedCacheBehaviorForwardedValues
+              functionAssociation?: [CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOrderedCacheBehaviorFunctionAssociation]
+              grpcConfig?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOrderedCacheBehaviorGrpcConfig
+              lambdaFunctionAssociation?: [CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOrderedCacheBehaviorLambdaFunctionAssociation]
+              maxTtl?: float
+              minTtl?: float
+              originRequestPolicyId?: str
+              pathPattern?: str
+              realtimeLogConfigArn?: str
+              responseHeadersPolicyId?: str
+              smoothStreaming?: bool
+              targetOriginId?: str
+              trustedKeyGroups?: [str]
+              trustedSigners?: [str]
+              viewerProtocolPolicy?: str
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOrigin:
+              connectionAttempts?: float
+              connectionTimeout?: float
+              customHeader?: [CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginCustomHeader]
+              customOriginConfig?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginCustomOriginConfig
+              domainName?: str
+              originAccessControlId?: str
+              originAccessControlIdRef?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginOriginAccessControlIDRef
+              originAccessControlIdSelector?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginOriginAccessControlIDSelector
+              originId?: str
+              originPath?: str
+              originShield?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginOriginShield
+              responseCompletionTimeout?: float
+              s3OriginConfig?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginS3OriginConfig
+              vpcOriginConfig?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginVpcOriginConfig
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginGroup:
+              failoverCriteria?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginGroupFailoverCriteria
+              member?: [CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginGroupMember]
+              originId?: str
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderRestrictions:
+              geoRestriction?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderRestrictionsGeoRestriction
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderViewerCertificate:
+              acmCertificateArn?: str
+              cloudfrontDefaultCertificate?: bool
+              iamCertificateId?: str
+              minimumProtocolVersion?: str
+              sslSupportMethod?: str
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderViewerMtlsConfig:
+              mode?: str
+              trustStoreConfig?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderViewerMtlsConfigTrustStoreConfig
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderForwardedValuesCookies:
+              forward?: str
+              whitelistedNames?: [str]
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderFunctionArnRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderFunctionArnSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderFunctionAssociationFunctionArnRef:
+              name: str
+              namespace?: str
+              policy?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderFunctionArnRefPolicy
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderFunctionAssociationFunctionArnSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderFunctionArnSelectorPolicy
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderLambdaArnRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderLambdaArnSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderLambdaFunctionAssociationLambdaArnRef:
+              name: str
+              namespace?: str
+              policy?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderLambdaArnRefPolicy
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderLambdaFunctionAssociationLambdaArnSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderLambdaArnSelectorPolicy
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOrderedCacheBehaviorForwardedValues:
+              cookies?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOrderedCacheBehaviorForwardedValuesCookies
+              headers?: [str]
+              queryString?: bool
+              queryStringCacheKeys?: [str]
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOrderedCacheBehaviorForwardedValuesCookies:
+              forward?: str
+              whitelistedNames?: [str]
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOrderedCacheBehaviorFunctionAssociation:
+              eventType?: str
+              functionArn?: str
+              functionArnRef?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderFunctionAssociationFunctionArnRef
+              functionArnSelector?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderFunctionAssociationFunctionArnSelector
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOrderedCacheBehaviorGrpcConfig:
+              enabled?: bool
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOrderedCacheBehaviorLambdaFunctionAssociation:
+              eventType?: str
+              includeBody?: bool
+              lambdaArn?: str
+              lambdaArnRef?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderLambdaFunctionAssociationLambdaArnRef
+              lambdaArnSelector?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderLambdaFunctionAssociationLambdaArnSelector
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginAccessControlIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginAccessControlIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginAccessIdentityRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginAccessIdentitySelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginCustomHeader:
+              name?: str
+              value?: str
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginCustomOriginConfig:
+              httpPort?: float
+              httpsPort?: float
+              ipAddressType?: str
+              originKeepaliveTimeout?: float
+              originMtlsConfig?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderCustomOriginConfigOriginMtlsConfig
+              originProtocolPolicy?: str
+              originReadTimeout?: float
+              originSslProtocols?: [str]
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginGroupFailoverCriteria:
+              statusCodes?: [float]
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginGroupMember:
+              originId?: str
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginOriginAccessControlIDRef:
+              name: str
+              namespace?: str
+              policy?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginAccessControlIDRefPolicy
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginOriginAccessControlIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginAccessControlIDSelectorPolicy
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginOriginShield:
+              enabled?: bool
+              originShieldRegion?: str
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginS3OriginConfig:
+              originAccessIdentity?: str
+              originAccessIdentityRef?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderS3OriginConfigOriginAccessIdentityRef
+              originAccessIdentitySelector?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderS3OriginConfigOriginAccessIdentitySelector
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginVpcOriginConfig:
+              originKeepaliveTimeout?: float
+              originReadTimeout?: float
+              ownerAccountId?: str
+              vpcOriginId?: str
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderRestrictionsGeoRestriction:
+              locations?: [str]
+              restrictionType?: str
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderS3OriginConfigOriginAccessIdentityRef:
+              name: str
+              namespace?: str
+              policy?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginAccessIdentityRefPolicy
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderS3OriginConfigOriginAccessIdentitySelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginAccessIdentitySelectorPolicy
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProvider:
+              aliases?: [str]
+              anycastIpListId?: str
+              cacheTagConfig?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderCacheTagConfig
+              comment?: str
+              connectionFunctionAssociation?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderConnectionFunctionAssociation
+              continuousDeploymentPolicyId?: str
+              customErrorResponse?: [CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderCustomErrorResponse]
+              defaultCacheBehavior?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderDefaultCacheBehavior
+              defaultRootObject?: str
+              enabled?: bool
+              httpVersion?: str
+              isIpv6Enabled?: bool
+              loggingConfig?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderLoggingConfig
+              orderedCacheBehavior?: [CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOrderedCacheBehavior]
+              origin?: [CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOrigin]
+              originGroup?: [CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderOriginGroup]
+              priceClass?: str
+              restrictions?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderRestrictions
+              retainOnDelete?: bool
+              staging?: bool
+              tags?: {str:str}
+              viewerCertificate?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderViewerCertificate
+              viewerMtlsConfig?: CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderViewerMtlsConfig
+              waitForDeployment?: bool
+              webAclId?: str
+
+          schema CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProviderViewerMtlsConfigTrustStoreConfig:
+              advertiseTrustStoreCaNames?: bool
+              ignoreCertificateExpiry?: bool
+              trustStoreId?: str
+
+          schema S3AwsmUpboundIoV1beta1BucketSpecForProvider:
+              bucketNamespace?: str
+              forceDestroy?: bool
+              objectLockEnabled?: bool
+              region: str
+              tags?: {str:str}
+
+          schema S3AwsmUpboundIoV1beta1BucketPolicySpecForProviderBucketRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema S3AwsmUpboundIoV1beta1BucketPolicySpecForProviderBucketSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema S3AwsmUpboundIoV1beta1BucketPolicySpecForProviderBucketRef:
+              name: str
+              namespace?: str
+              policy?: S3AwsmUpboundIoV1beta1BucketPolicySpecForProviderBucketRefPolicy
+
+          schema S3AwsmUpboundIoV1beta1BucketPolicySpecForProviderBucketSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: S3AwsmUpboundIoV1beta1BucketPolicySpecForProviderBucketSelectorPolicy
+
+          schema S3AwsmUpboundIoV1beta1BucketPolicySpecForProvider:
+              bucket?: str
+              bucketRef?: S3AwsmUpboundIoV1beta1BucketPolicySpecForProviderBucketRef
+              bucketSelector?: S3AwsmUpboundIoV1beta1BucketPolicySpecForProviderBucketSelector
+              policy?: str
+              region: str
+
+          schema S3AwsmUpboundIoV1beta1BucketPublicAccessBlockSpecForProviderBucketRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema S3AwsmUpboundIoV1beta1BucketPublicAccessBlockSpecForProviderBucketSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema S3AwsmUpboundIoV1beta1BucketPublicAccessBlockSpecForProviderBucketRef:
+              name: str
+              namespace?: str
+              policy?: S3AwsmUpboundIoV1beta1BucketPublicAccessBlockSpecForProviderBucketRefPolicy
+
+          schema S3AwsmUpboundIoV1beta1BucketPublicAccessBlockSpecForProviderBucketSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: S3AwsmUpboundIoV1beta1BucketPublicAccessBlockSpecForProviderBucketSelectorPolicy
+
+          schema S3AwsmUpboundIoV1beta1BucketPublicAccessBlockSpecForProvider:
+              blockPublicAcls?: bool
+              blockPublicPolicy?: bool
+              bucket?: str
+              bucketRef?: S3AwsmUpboundIoV1beta1BucketPublicAccessBlockSpecForProviderBucketRef
+              bucketSelector?: S3AwsmUpboundIoV1beta1BucketPublicAccessBlockSpecForProviderBucketSelector
+              ignorePublicAcls?: bool
+              region: str
+              restrictPublicBuckets?: bool
+              skipDestroy?: bool
+
+          schema CloudfrontAwsmUpboundIoV1beta1OriginAccessControlSpecForProvider:
+              description?: str
+              name?: str
+              originAccessControlOriginType?: str
+              signingBehavior?: str
+              signingProtocol?: str
+
+          # Your composite resource (XR) spec schemas, one per kind, e.g. `schema MyKindSpec:`.
+
+          # A public TLS certificate for one domain, issued by ACM and validated through
+          # DNS records in a Route 53 hosted zone. CloudFront only accepts certificates
+          # from us-east-1, so keep the default region when the certificate is for a
+          # CdnDistribution.
+          schema TlsCertificateSpec:
+              domainName: str
+              hostedZoneId: str
+              region: str = "us-east-1"
+
+          # certificateArn is set once ACM has created the certificate. validated is true
+          # once ACM reports the DNS validation as complete.
+
+          # One change to the fleet's size, that AWS applies on a cron schedule. recurrence
+          # is a Unix cron expression, for example "0 8 * * MON-FRI" for 08:00 on weekdays,
+          # and timeZone is an IANA name such as "Europe/London" (UTC when it is left out).
+          # Set at least one of minSize, maxSize or desiredCapacity. A value left out is
+          # not changed at that time.
+          schema ScalingScheduleSpec:
+              name: str
+              recurrence: str
+              timeZone?: str
+              minSize?: int
+              maxSize?: int
+              desiredCapacity?: int
+              check:
+                  minSize is not Undefined or maxSize is not Undefined or desiredCapacity is not Undefined, "a scaling schedule must set minSize, maxSize or desiredCapacity"
+
+          # The application part of a web fleet: an auto-scaling group of web instances
+          # behind an application load balancer, and what they run. It does not say which
+          # network the fleet runs in, so an Environment can supply that.
+          # userData is a plain-text bootstrap script (cloud-init or a shell script); the
+          # launch template receives it base64-encoded, as EC2 requires.
+          schema WebFleetAppSpec:
+              name: str
+              imageId: str
+              instanceType: str = "t3.micro"
+              port: int = 80
+              healthCheckPath: str = "/"
+              minSize: int = 1
+              maxSize: int = 2
+              userData?: str
+              scalingSchedules?: [ScalingScheduleSpec]
+              check:
+                  minSize <= maxSize, "minSize must not be greater than maxSize"
+
+          # A web fleet placed in a network: WebFleetAppSpec plus the region and the network.
+          schema WebFleetSpec(WebFleetAppSpec):
+              region: str = "us-east-1"
+              network: NetworkSpec
+
+          # loadBalancerDnsName is what a CdnDistribution uses as its origin.
+
+          # hostedZoneId is the Route 53 zone that gets an alias record for each alias,
+          # pointing it at the distribution. Without it, the aliases are only set on
+          # CloudFront and nothing resolves them.
+          # A CloudFront distribution in front of an origin (such as the load balancer of
+          # a WebFleet). The origin is reached over HTTP, and viewers are redirected to
+          # HTTPS. Every request is forwarded to the origin, with caching disabled, since
+          # the origin is a dynamic application.
+
+          # The VPC and subnets that resources run in. The subnets must already exist:
+          # public ones for internet-facing load balancers, private ones for instances and
+          # databases. Two or more in each tier, in different zones.
+          schema NetworkSpec:
+              vpcId: str
+              publicSubnetIds: [str]
+              privateSubnetIds: [str]
+              check:
+                  len(publicSubnetIds) >= 2, "publicSubnetIds needs at least two subnets, in different zones"
+                  len(privateSubnetIds) >= 2, "privateSubnetIds needs at least two subnets, in different zones"
+
+          # A VPC to create, from a CIDR block, across two or more zones. Not supported yet:
+          # an Environment that asks for one is rejected until the create path exists.
+          schema CreateVpcSpec:
+              cidrBlock: str
+              availabilityZones: [str]
+              check:
+                  len(availabilityZones) >= 2, "availabilityZones needs at least two zones"
+
+          # An environment's network: a VPC and subnets that already exist (NetworkSpec), or
+          # a VPC to create (CreateVpcSpec). Exactly one of the two is given.
+          type EnvironmentNetwork = NetworkSpec | CreateVpcSpec
+
+          # An environment, such as prod, that holds a network and the applications that
+          # run in it. Each application's AWS names are prefixed with the environment name,
+          # so two environments can share a region. Application names must be unique.
+
+          # webFleetDnsNames maps each web fleet's application name to its load balancer's
+          # DNS name, for the fleets whose load balancer exists.
+
+          # A static website: files in a private S3 bucket, served over HTTPS at domainName
+          # by a CloudFront distribution. Only that distribution may read the bucket, through
+          # an origin access control. The certificate is a TlsCertificate for domainName,
+          # validated by DNS in hostedZoneId, and the domain gets an alias record to the
+          # distribution. bucketName must be unique across all of AWS.
+          schema StaticWebSiteSpec:
+              domainName: str
+              hostedZoneId: str
+              bucketName: str
+              region: str = "us-east-1"
+
+          # distributionDomainName is the CloudFront address (such as d111111abcdef8.cloudfront.net)
+          # once the distribution has one.
+          schema StaticWebSiteStatus:
+              distributionDomainName?: str
+
+          import json
+          # StaticWebSite: files in a private S3 bucket, served over HTTPS at domainName by a
+          # CloudFront distribution. The distribution reaches the bucket through an origin
+          # access control, and the bucket policy lets only that distribution read it.
+          # Staged by what is observed:
+          #   cold start                        -> certificate, bucket, access control
+          #   bucket exists                     -> public access block
+          #   access control, bucket and a validated certificate -> distribution
+          #   distribution ARN known            -> bucket policy
+          #   distribution domain name known    -> alias record and status
+          composeStaticWebSite = lambda oxr, ocds -> [any] {
+              spec: StaticWebSiteSpec = oxr.spec
+
+              # Bind XR values to locals before building resource dicts (see kcl-primer).
+              _domainName = spec.domainName
+              _hostedZoneId = spec.hostedZoneId
+              _bucketName = spec.bucketName
+              _region = spec.region
+
+              _certificateName = "certificate"
+              _bucketResourceName = "bucket"
+              _publicAccessBlockName = "public-access-block"
+              _oacName = "origin-access-control"
+              _distributionName = "distribution"
+              _bucketPolicyName = "bucket-policy"
+              _aliasRecordName = "alias-record"
+              _originId = "s3-origin"
+
+              # The certificate is a child XR: a TlsCertificate for the domain. CloudFront only
+              # accepts certificates from us-east-1.
+              _certificate = {
+                  apiVersion = "platform.demotw.com/v1alpha1"
+                  kind = "TlsCertificate"
+                  metadata.annotations = {"krm.kcl.dev/composition-resource-name" = _certificateName}
+                  spec = TlsCertificateSpec {
+                      domainName = _domainName
+                      hostedZoneId = _hostedZoneId
+                      region = "us-east-1"
+                  }
+              }
+
+              _bucketForProvider: S3AwsmUpboundIoV1beta1BucketSpecForProvider = {
+                  region = _region
+              }
+              _bucket = {
+                  apiVersion = "s3.aws.m.upbound.io/v1beta1"
+                  kind = "Bucket"
+                  metadata.annotations = {
+                      "crossplane.io/external-name" = _bucketName
+                      "krm.kcl.dev/composition-resource-name" = _bucketResourceName
+                  }
+                  spec.forProvider = _bucketForProvider
+              }
+
+              # Nothing in the bucket is public, whatever the bucket policy says.
+              _publicAccessBlockForProvider: S3AwsmUpboundIoV1beta1BucketPublicAccessBlockSpecForProvider = {
+                  bucket = _bucketName
+                  region = _region
+                  blockPublicAcls = True
+                  blockPublicPolicy = True
+                  ignorePublicAcls = True
+                  restrictPublicBuckets = True
+              }
+              _publicAccessBlock = {
+                  apiVersion = "s3.aws.m.upbound.io/v1beta1"
+                  kind = "BucketPublicAccessBlock"
+                  metadata.annotations = {"krm.kcl.dev/composition-resource-name" = _publicAccessBlockName}
+                  spec.forProvider = _publicAccessBlockForProvider
+              }
+
+              # The origin access control lets CloudFront sign its requests to the bucket.
+              _oacForProvider: CloudfrontAwsmUpboundIoV1beta1OriginAccessControlSpecForProvider = {
+                  name = _bucketName
+                  description = "Reads ${_bucketName} for the CloudFront distribution"
+                  originAccessControlOriginType = "s3"
+                  signingBehavior = "always"
+                  signingProtocol = "sigv4"
+              }
+              _oac = {
+                  apiVersion = "cloudfront.aws.m.upbound.io/v1beta1"
+                  kind = "OriginAccessControl"
+                  metadata.annotations = {"krm.kcl.dev/composition-resource-name" = _oacName}
+                  spec.forProvider = _oacForProvider
+              }
+
+              _bucketAtProvider = ocds[_bucketResourceName]?.Resource?.status?.atProvider
+              _bucketArn = _bucketAtProvider?.arn
+              _bucketRegionalDomainName = _bucketAtProvider?.bucketRegionalDomainName
+
+              _oacId = ocds[_oacName]?.Resource?.status?.atProvider?.id
+
+              # The certificate's status is read uncast: it also carries Crossplane's conditions.
+              _certificateStatus = ocds[_certificateName]?.Resource?.status
+              _certificateArn = _certificateStatus?.certificateArn
+              _certificateValidated = _certificateStatus?.validated or False
+
+              _distributionReady = True if _oacId and _bucketRegionalDomainName and _certificateValidated else False
+
+              _distributionForProvider = CloudfrontAwsmUpboundIoV1beta1DistributionSpecForProvider {
+                  enabled = True
+                  isIpv6Enabled = True
+                  priceClass = "PriceClass_100"
+                  defaultRootObject = "index.html"
+                  aliases = [_domainName]
+                  restrictions = {geoRestriction = {restrictionType = "none"}}
+                  viewerCertificate = {
+                      acmCertificateArn = _certificateArn
+                      sslSupportMethod = "sni-only"
+                      minimumProtocolVersion = "TLSv1.2_2021"
+                  }
+                  origin = [{
+                      originId = _originId
+                      domainName = _bucketRegionalDomainName
+                      originAccessControlId = _oacId
+                  }]
+                  defaultCacheBehavior = {
+                      targetOriginId = _originId
+                      viewerProtocolPolicy = "redirect-to-https"
+                      allowedMethods = ["GET", "HEAD", "OPTIONS"]
+                      cachedMethods = ["GET", "HEAD"]
+                      compress = True
+                      # AWS managed "CachingOptimized" policy: fixed, global ID documented by AWS.
+                      cachePolicyId = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+                  }
+              } if _distributionReady else None
+
+              _distribution = {
+                  apiVersion = "cloudfront.aws.m.upbound.io/v1beta1"
+                  kind = "Distribution"
+                  metadata.annotations = {"krm.kcl.dev/composition-resource-name" = _distributionName}
+                  spec.forProvider = _distributionForProvider
+              } if _distributionReady else None
+
+              _distributionAtProvider = ocds[_distributionName]?.Resource?.status?.atProvider
+              _distributionArn = _distributionAtProvider?.arn
+              _distributionDomainName = _distributionAtProvider?.domainName
+
+              # Only the distribution may read the bucket, and only for requests it signs.
+              _bucketPolicy = {
+                  apiVersion = "s3.aws.m.upbound.io/v1beta1"
+                  kind = "BucketPolicy"
+                  metadata.annotations = {"krm.kcl.dev/composition-resource-name" = _bucketPolicyName}
+                  spec.forProvider = S3AwsmUpboundIoV1beta1BucketPolicySpecForProvider {
+                      bucket = _bucketName
+                      region = _region
+                      policy = json.encode({
+                          Version = "2012-10-17"
+                          Statement = [{
+                              Sid = "AllowCloudFrontServicePrincipalReadOnly"
+                              Effect = "Allow"
+                              Principal = {Service = "cloudfront.amazonaws.com"}
+                              Action = ["s3:GetObject"]
+                              Resource = "arn:aws:s3:::${_bucketName}/*"
+                              Condition = {StringEquals = {"AWS:SourceArn" = _distributionArn}}
+                          }]
+                      })
+                  }
+              } if _distributionArn else None
+
+              # The domain name points at the distribution. CloudFront's hosted zone ID is fixed.
+              _aliasRecord = {
+                  apiVersion = "route53.aws.m.upbound.io/v1beta1"
+                  kind = "Record"
+                  metadata.annotations = {"krm.kcl.dev/composition-resource-name" = _aliasRecordName}
+                  spec.forProvider = Route53AwsmUpboundIoV1beta1RecordSpecForProvider {
+                      zoneId = _hostedZoneId
+                      name = _domainName
+                      $type = "A"
+                      allowOverwrite = True
+                      alias = Route53AwsmUpboundIoV1beta1RecordSpecForProviderAlias {
+                          name = _distributionDomainName
+                          zoneId = "Z2FDTNDATAQYW2"
+                          evaluateTargetHealth = False
+                      }
+                  }
+              } if _distributionDomainName else None
+
+              _xr = {
+                  apiVersion = oxr.apiVersion
+                  kind = oxr.kind
+                  metadata = oxr.metadata
+                  status = StaticWebSiteStatus {distributionDomainName = _distributionDomainName}
+              } if _distributionDomainName else None
+
+              _publicAccessBlocks = [_publicAccessBlock] if _bucketArn else []
+              _distributions = [_distribution] if _distributionReady else []
+              _bucketPolicies = [_bucketPolicy] if _distributionArn else []
+              _aliasRecords = [_aliasRecord] if _distributionDomainName else []
+              _xrs = [_xr] if _xr else []
+
+              [_certificate, _bucket, _oac] + _publicAccessBlocks + _distributions + _bucketPolicies + _aliasRecords + _xrs
+          }
+
+          _kilnSpecFields = ["bucketName", "domainName", "hostedZoneId", "region"]
+          _kilnObservedXr = option("params").oxr
+          _kilnOxr = _kilnObservedXr | {spec = {k: v for k, v in _kilnObservedXr.spec if k in _kilnSpecFields}} if _kilnObservedXr?.spec else _kilnObservedXr
+          _kilnProviderConfigRef = {kind = "ClusterProviderConfig", name = "pod-identity"}
+          _kilnIsManaged = lambda r: any -> bool {
+              "forProvider" in (r?.spec or {}) and not (r?.apiVersion or "").startswith("platform.example.com/")
+          }
+          _kilnWithProviderConfig = lambda r: any -> any {
+              r | {spec.providerConfigRef = _kilnProviderConfigRef} if _kilnIsManaged(r) and not r?.spec?.providerConfigRef else r
+          }
+          items = [_kilnWithProviderConfig(r) for r in composeStaticWebSite(_kilnOxr, option("params").ocds)]
+  - step: auto-ready
+    functionRef:
+      name: function-auto-ready

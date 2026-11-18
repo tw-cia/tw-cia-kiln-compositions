@@ -122,3 +122,19 @@ schema EnvironmentSpec:
 # DNS name, for the fleets whose load balancer exists.
 schema EnvironmentStatus:
     webFleetDnsNames?: {str:str}
+
+# A static website: files in a private S3 bucket, served over HTTPS at domainName
+# by a CloudFront distribution. Only that distribution may read the bucket, through
+# an origin access control. The certificate is a TlsCertificate for domainName,
+# validated by DNS in hostedZoneId, and the domain gets an alias record to the
+# distribution. bucketName must be unique across all of AWS.
+schema StaticWebSiteSpec:
+    domainName: str
+    hostedZoneId: str
+    bucketName: str
+    region: str = "us-east-1"
+
+# distributionDomainName is the CloudFront address (such as d111111abcdef8.cloudfront.net)
+# once the distribution has one.
+schema StaticWebSiteStatus:
+    distributionDomainName?: str
