@@ -69,7 +69,7 @@ schema WebFleetStatus:
 # across all of AWS.
 schema S3OriginSpec:
     bucketName: str
-    region: str = "us-east-1"
+    region: str
 
 # An HTTPS origin that already exists: a name it serves HTTPS on, with a certificate
 # for that name, such as a WebFleet's domain.

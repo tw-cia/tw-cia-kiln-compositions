@@ -34,13 +34,13 @@ spec:
                   bucketName:
                     type: string
                   region:
-                    default: us-east-1
                     type: string
                   domainName:
                     type: string
                 oneOf:
                 - required:
                   - bucketName
+                  - region
                 - required:
                   - domainName
               priceClass:

@@ -7,7 +7,7 @@ _cdnDomain = {name = "cdn.example.com", hostedZoneId = "Z0123456789ABCDEFGHIJ"}
 # The two origins. The S3 bucket is served through an origin access control, and the
 # HTTPS origin is a WebFleet's domain, which its own certificate covers.
 _cdnHttpsOrigin = {domainName = "web.example.com"}
-_cdnS3Origin = {bucketName = "cdn-example-assets"}
+_cdnS3Origin = {bucketName = "cdn-example-assets", region = "us-east-1"}
 
 _cdnHttpsOxr = {
     apiVersion = "platform.demotw.com/v1alpha1"
@@ -61,11 +61,11 @@ _cdnKind = lambda resources, kind {
 # --- the origin union ---------------------------------------------------------
 
 test_cdnDistribution_origin_accepts_either_form = lambda {
-    s3: schemas_compositions.OriginSpec = {bucketName = "cdn-example-assets"}
+    s3: schemas_compositions.OriginSpec = {bucketName = "cdn-example-assets", region = "eu-west-1"}
     https: schemas_compositions.OriginSpec = {domainName = "web.example.com"}
 
     assert s3.bucketName == "cdn-example-assets"
-    assert s3.region == "us-east-1", "the bucket region defaults to us-east-1"
+    assert s3.region == "eu-west-1", "an S3 origin states its bucket's region"
     assert https.domainName == "web.example.com"
 }
 
