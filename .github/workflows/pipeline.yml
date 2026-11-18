@@ -1,0 +1,86 @@
+# Kiln pipeline.
+#
+# 1. kcl test .                 (no Docker, no cluster)
+# 2. kiln generate-all          regenerates the Composition and XRD
+#    kiln render-all            renders every kind (needs Docker and the crossplane CLI)
+#    saves the generated manifests as a workflow artifact
+# 3. list pods across all namespaces on the cia-test EKS cluster, via an assumed AWS role
+
+name: pipeline
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # lets configure-aws-credentials exchange a GitHub OIDC token for the role
+
+env:
+  AWS_ROLE_ARN: arn:aws:iam::160071257600:role/cia-test-github-actions
+  AWS_REGION: ap-southeast-1
+  EKS_CLUSTER_NAME: cia-test
+
+jobs:
+  kcl-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: install kcl
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          gh release download "$KCL_VERSION" -R kcl-lang/cli -p "kcl-$KCL_VERSION-linux-amd64.tar.gz" -p "cli_${KCL_VERSION#v}_checksums.txt"
+          grep " kcl-$KCL_VERSION-linux-amd64.tar.gz\$" "cli_${KCL_VERSION#v}_checksums.txt" | sha256sum -c -
+          tar -xzf "kcl-$KCL_VERSION-linux-amd64.tar.gz" kcl
+          sudo install -m 0755 kcl /usr/local/bin/kcl
+          kcl version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KCL_VERSION: v0.13.2
+      - name: kcl test
+        working-directory: kcl-scripts
+        run: kcl test .
+
+  generate-render:
+    needs: kcl-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - name: install kcl
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          gh release download "$KCL_VERSION" -R kcl-lang/cli -p "kcl-$KCL_VERSION-linux-amd64.tar.gz" -p "cli_${KCL_VERSION#v}_checksums.txt"
+          grep " kcl-$KCL_VERSION-linux-amd64.tar.gz\$" "cli_${KCL_VERSION#v}_checksums.txt" | sha256sum -c -
+          tar -xzf "kcl-$KCL_VERSION-linux-amd64.tar.gz" kcl
+          sudo install -m 0755 kcl /usr/local/bin/kcl
+          kcl version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KCL_VERSION: v0.13.2
+      - name: kiln generate-all
+        run: uvx --from "git+https://github.com/leprechaun/kiln#subdirectory=tooling" kiln generate-all
+      - name: kiln render-all
+        run: uvx --from "git+https://github.com/leprechaun/kiln#subdirectory=tooling" kiln render-all
+      - name: upload manifests
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: manifests
+          path: manifests/crossplane-compositions/**/*.yaml
+
+  list-pods:
+    needs: generate-render
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: update kubeconfig for cia-test
+        run: aws eks update-kubeconfig --name "$EKS_CLUSTER_NAME" --region "$AWS_REGION"
+      - name: list pods in all namespaces
+        run: kubectl get pods --all-namespaces
