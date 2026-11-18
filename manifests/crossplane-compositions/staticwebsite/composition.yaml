@@ -4,7 +4,7 @@ metadata:
   name: staticwebsite-kcl-first
 spec:
   compositeTypeRef:
-    apiVersion: platform.example.com/v1alpha1
+    apiVersion: platform.demotw.com/v1alpha1
     kind: StaticWebSite
   mode: Pipeline
   pipeline:
@@ -838,7 +838,7 @@ spec:
           _kilnOxr = _kilnObservedXr | {spec = {k: v for k, v in _kilnObservedXr.spec if k in _kilnSpecFields}} if _kilnObservedXr?.spec else _kilnObservedXr
           _kilnProviderConfigRef = {kind = "ClusterProviderConfig", name = "pod-identity"}
           _kilnIsManaged = lambda r: any -> bool {
-              "forProvider" in (r?.spec or {}) and not (r?.apiVersion or "").startswith("platform.example.com/")
+              "forProvider" in (r?.spec or {}) and not (r?.apiVersion or "").startswith("platform.demotw.com/")
           }
           _kilnWithProviderConfig = lambda r: any -> any {
               r | {spec.providerConfigRef = _kilnProviderConfigRef} if _kilnIsManaged(r) and not r?.spec?.providerConfigRef else r

@@ -1,0 +1,7 @@
+apiVersion: platform.demotw.com/v1alpha1
+kind: TlsCertificate
+metadata:
+  name: site-cert
+spec:
+  domainName: www.example.com
+  hostedZoneId: Z0123456789ABCDEFGHIJ

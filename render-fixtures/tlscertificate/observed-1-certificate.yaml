@@ -1,0 +1,15 @@
+apiVersion: acm.aws.m.upbound.io/v1beta1
+kind: Certificate
+metadata:
+  name: site-cert-7k2qp
+  annotations:
+    crossplane.io/composition-resource-name: certificate
+status:
+  atProvider:
+    arn: arn:aws:acm:us-east-1:111111111111:certificate/example
+    domainName: www.example.com
+    domainValidationOptions:
+      - domainName: www.example.com
+        resourceRecordName: _abc123.www.example.com
+        resourceRecordType: CNAME
+        resourceRecordValue: _def456.acm-validations.aws.

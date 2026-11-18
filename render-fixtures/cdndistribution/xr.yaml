@@ -1,0 +1,10 @@
+apiVersion: platform.demotw.com/v1alpha1
+kind: CdnDistribution
+metadata:
+  name: site-cdn
+spec:
+  domain:
+    name: cdn.example.com
+    hostedZoneId: Z0123456789ABCDEFGHIJ
+  origin:
+    domainName: web.example.com

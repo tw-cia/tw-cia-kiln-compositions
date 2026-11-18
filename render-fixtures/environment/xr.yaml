@@ -1,0 +1,28 @@
+apiVersion: platform.demotw.com/v1alpha1
+kind: Environment
+metadata:
+  name: prod-environment
+spec:
+  name: prod
+  network:
+    vpcId: vpc-0123456789abcdef0
+    publicSubnetIds:
+      - subnet-pub-a
+      - subnet-pub-b
+    privateSubnetIds:
+      - subnet-priv-a
+      - subnet-priv-b
+  webFleets:
+    - name: web
+      domain:
+        name: web.example.com
+        hostedZoneId: Z0123456789ABCDEFGHIJ
+      imageId: ami-0123456789abcdef0
+    - name: api
+      domain:
+        name: api.example.com
+        hostedZoneId: Z0123456789ABCDEFGHIJ
+      imageId: ami-0fedcba9876543210
+      port: 8080
+      minSize: 2
+      maxSize: 4

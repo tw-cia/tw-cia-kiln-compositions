@@ -1,0 +1,18 @@
+# expect-error: publicSubnetIds needs at least two subnets
+apiVersion: platform.demotw.com/v1alpha1
+kind: WebFleet
+metadata:
+  name: web-fleet
+spec:
+  name: web
+  domain:
+    name: web.example.com
+    hostedZoneId: Z0123456789ABCDEFGHIJ
+  network:
+    vpcId: vpc-0123456789abcdef0
+    publicSubnetIds:
+      - subnet-aaaa1111
+    privateSubnetIds:
+      - subnet-cccc3333
+      - subnet-dddd4444
+  imageId: ami-0123456789abcdef0

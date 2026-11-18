@@ -1,0 +1,24 @@
+apiVersion: platform.demotw.com/v1alpha1
+kind: TlsCertificate
+metadata:
+  name: site-cdn-certificate
+  annotations:
+    crossplane.io/composition-resource-name: certificate
+status:
+  certificateArn: arn:aws:acm:us-east-1:111111111111:certificate/example
+  validated: true
+  conditions:
+    - type: Ready
+      status: "True"
+---
+apiVersion: cloudfront.aws.m.upbound.io/v1beta1
+kind: Distribution
+metadata:
+  name: site-cdn-k3l4j
+  annotations:
+    crossplane.io/composition-resource-name: distribution
+status:
+  atProvider:
+    arn: arn:aws:cloudfront::111111111111:distribution/E2EXAMPLE
+    domainName: d111111abcdef8.cloudfront.net
+    id: E2EXAMPLE

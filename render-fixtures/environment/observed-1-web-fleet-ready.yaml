@@ -1,0 +1,12 @@
+apiVersion: platform.demotw.com/v1alpha1
+kind: WebFleet
+metadata:
+  name: prod-environment-web-fleet
+  annotations:
+    crossplane.io/composition-resource-name: web-fleet-web
+status:
+  loadBalancerArn: arn:aws:elasticloadbalancing:us-east-1:111111111111:loadbalancer/app/prod-web/abcdef
+  loadBalancerDnsName: prod-web-123456.us-east-1.elb.amazonaws.com
+  conditions:
+    - type: Ready
+      status: "True"

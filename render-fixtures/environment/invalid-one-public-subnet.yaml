@@ -1,0 +1,14 @@
+# expect-error: publicSubnetIds needs at least two subnets
+apiVersion: platform.demotw.com/v1alpha1
+kind: Environment
+metadata:
+  name: prod-environment
+spec:
+  name: prod
+  network:
+    vpcId: vpc-0123456789abcdef0
+    publicSubnetIds:
+      - subnet-pub-a
+    privateSubnetIds:
+      - subnet-priv-a
+      - subnet-priv-b

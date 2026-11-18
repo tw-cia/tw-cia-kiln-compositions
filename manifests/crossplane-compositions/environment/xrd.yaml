@@ -1,9 +1,9 @@
 apiVersion: apiextensions.crossplane.io/v2
 kind: CompositeResourceDefinition
 metadata:
-  name: environments.platform.example.com
+  name: environments.platform.demotw.com
 spec:
-  group: platform.example.com
+  group: platform.demotw.com
   names:
     kind: Environment
     plural: environments

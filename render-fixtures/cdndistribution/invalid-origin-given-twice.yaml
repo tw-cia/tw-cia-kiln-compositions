@@ -1,0 +1,12 @@
+# expect-error: expect S3OriginSpec | HttpsOriginSpec
+apiVersion: platform.demotw.com/v1alpha1
+kind: CdnDistribution
+metadata:
+  name: site-cdn
+spec:
+  domain:
+    name: cdn.example.com
+    hostedZoneId: Z0123456789ABCDEFGHIJ
+  origin:
+    bucketName: site-cdn-assets
+    domainName: web.example.com

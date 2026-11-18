@@ -1,0 +1,12 @@
+apiVersion: platform.demotw.com/v1alpha1
+kind: TlsCertificate
+metadata:
+  name: site-cdn-certificate
+  annotations:
+    crossplane.io/composition-resource-name: certificate
+status:
+  certificateArn: arn:aws:acm:us-east-1:111111111111:certificate/example
+  validated: true
+  conditions:
+    - type: Ready
+      status: "True"

@@ -1,4 +1,4 @@
-group = "platform.example.com"
+group = "platform.demotw.com"
 format = "yaml"
 scope = "Namespaced"
 providerConfig = { kind = "ClusterProviderConfig", name = "pod-identity" }

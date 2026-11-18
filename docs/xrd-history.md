@@ -849,3 +849,73 @@ planned next step is to make StaticWebSite a preset over CdnDistribution.
 - `M manifests/crossplane-compositions/staticwebsite/composition.yaml`
 - `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
 - `M manifests/crossplane-compositions/webfleet/composition.yaml`
+
+### 25. Reconcile the history with the tree as it stood at reconstruction time
+*2026-11-18 16:59:49 UTC*
+
+This commit sets the tree to the project's main branch, so the tip of this
+history matches the real project. Everything above it was reconstructed from
+session transcripts and Claude Code file backups, and the reconstruction has
+gaps. This commit records them, rather than hiding them in the earlier ones.
+
+Files restored to their final content, and why:
+
+- Infrastructure files: .agents/skills, .claude/skills, manifests/
+  crossplane-providers, manifests/functions.yaml and prompt-2.md. They came
+  from kiln init, kiln install-skills or the user, not from edits the
+  transcripts record.
+- Render fixtures written with shell heredocs (cat > ... <<EOF), which the
+  edit tool never recorded. Their individual edit history is not recoverable.
+- kiln.toml: the replay carried an earlier draft with group
+  platform.example.com. The project uses platform.demotw.com.
+- kcl-scripts test file: macOS is case-insensitive, so StaticWebsite_test.k and
+  staticwebsite_test.k are one file. The reconstruction recorded both names.
+- Generated Crossplane manifests (xrd.yaml and composition.yaml): regenerated
+  from the KCL, so they match the final group name.
+- Experimental files that were deleted at a time the transcripts do not record
+  are absent here.
+
+**Tests:** PASS: 102/102
+**Generation:** ok
+
+**Files changed:**
+- `A .agents/skills/crossplane-intro/SKILL.md`
+- `A .agents/skills/kcl-primer/SKILL.md`
+- `A .agents/skills/kiln/SKILL.md`
+- `A .agents/skills/kiln/composing.md`
+- `A .agents/skills/kiln/configuration.md`
+- `A .agents/skills/kiln/provider-schemas.md`
+- `A .agents/skills/kiln/rendering.md`
+- `A .agents/skills/kiln/testing.md`
+- `A .agents/skills/kiln/troubleshooting.md`
+- `A .claude/skills/crossplane-intro`
+- `A .claude/skills/kcl-primer`
+- `A .claude/skills/kiln`
+- `M kiln.toml`
+- `M manifests/crossplane-compositions/cdndistribution/composition.yaml`
+- `M manifests/crossplane-compositions/cdndistribution/xrd.yaml`
+- `M manifests/crossplane-compositions/environment/composition.yaml`
+- `M manifests/crossplane-compositions/environment/xrd.yaml`
+- `M manifests/crossplane-compositions/staticwebsite/composition.yaml`
+- `M manifests/crossplane-compositions/staticwebsite/xrd.yaml`
+- `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
+- `M manifests/crossplane-compositions/tlscertificate/xrd.yaml`
+- `M manifests/crossplane-compositions/webfleet/composition.yaml`
+- `M manifests/crossplane-compositions/webfleet/xrd.yaml`
+- `A manifests/crossplane-providers/provider-aws-acm.yaml`
+- `A manifests/crossplane-providers/provider-aws-autoscaling.yaml`
+- `A manifests/crossplane-providers/provider-aws-cloudfront.yaml`
+- `A manifests/crossplane-providers/provider-aws-ec2.yaml`
+- `A manifests/crossplane-providers/provider-aws-elbv2.yaml`
+- `A manifests/crossplane-providers/provider-aws-iam.yaml`
+- `A manifests/crossplane-providers/provider-aws-lambda.yaml`
+- `A manifests/crossplane-providers/provider-aws-route53.yaml`
+- `A manifests/crossplane-providers/provider-aws-s3.yaml`
+- `A manifests/functions.yaml`
+- `A prompt-2.md`
+- `A render-fixtures/.gitkeep`
+- `A render-fixtures/cdndistribution/invalid-origin-given-twice.yaml`
+- `A render-fixtures/cdndistribution/observed-1-certificate-validated.yaml`
+- `A render-fixtures/cdndistribution/observed-2-distribution.yaml`
+- `A render-fixtures/cdndistribution/xr.yaml`
+- `A render-fixtures/environment/invalid-create-vpc.yaml`

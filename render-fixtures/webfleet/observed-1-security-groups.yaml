@@ -1,0 +1,21 @@
+apiVersion: ec2.aws.m.upbound.io/v1beta1
+kind: SecurityGroup
+metadata:
+  name: web-alb-4hj7s
+  annotations:
+    crossplane.io/composition-resource-name: alb-security-group
+status:
+  atProvider:
+    id: sg-0alb0000000000000
+    vpcId: vpc-0123456789abcdef0
+---
+apiVersion: ec2.aws.m.upbound.io/v1beta1
+kind: SecurityGroup
+metadata:
+  name: web-instances-q9w1e
+  annotations:
+    crossplane.io/composition-resource-name: instance-security-group
+status:
+  atProvider:
+    id: sg-0inst000000000000
+    vpcId: vpc-0123456789abcdef0
