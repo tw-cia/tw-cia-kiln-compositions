@@ -448,3 +448,29 @@ written files, and this commit records only that.
 - `D kcl-scripts/certificate.k`
 - `D kcl-scripts/certificate_test.k`
 - `M kiln.toml`
+
+### 14. TlsCertificate becomes its own kind, with a child-XR wait
+*2026-11-18T09:42:17 UTC*
+
+Session cf37dde6 (2026-11-18, 09:31-09:42). Moved the certificate out of the
+static website into tlscertificate.k, and made StaticWebSite compose it as a
+child XR. The static site now waits for the certificate to validate.
+
+What changed: tlscertificate.k and its test, staticwebsite.k rewritten to
+read the child's status, the TlsCertificate XRD and composition applied to
+the cluster.
+
+Reasoning: a certificate is reused by more than one kind, so it gets its own
+kind. The child reports a status field the parent reads uncast.
+
+Challenge: the docs comparison showed the experience notes had several gaps
+that the project docs had not fixed.
+
+**Tests:** error[E2G22]: TypeError | error[E2G22]: TypeError | error[E2G22]: TypeError
+**Generation:** ok
+
+**Files changed:**
+- `M kcl-scripts/StaticWebsite_test.k`
+- `M kcl-scripts/staticwebsite.k`
+- `A kcl-scripts/tlscertificate.k`
+- `A kcl-scripts/tlscertificate_test.k`
