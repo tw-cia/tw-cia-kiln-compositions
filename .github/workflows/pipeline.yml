@@ -107,5 +107,17 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: update kubeconfig for cia-test
         run: aws eks update-kubeconfig --name "$EKS_CLUSTER_NAME" --region "$AWS_REGION"
-      - name: list pods in all namespaces
-        run: kubectl get pods --all-namespaces
+      - name: download manifests
+        uses: actions/download-artifact@v8
+        with:
+          name: manifests
+          path: manifests-download
+      - name: apply manifests
+        run: kubectl apply -R -f manifests-download
+      - name: list all
+        run: kubectl get all --all-namespaces
+      - name: list matching claims
+        # The kinds we built are namespaced composite resources (no claimNames in the XRDs),
+        # so their instances are listed directly.
+        run: |
+          kubectl get cdndistributions,environments,staticwebsites,tlscertificates,webfleets --all-namespaces
