@@ -17,13 +17,16 @@ spec:
         type: object
         properties:
           spec:
-            description: 'Consumer-facing spec for a StaticWebsite composite resource:
-              a private S3 bucket served over HTTPS on a custom domain through CloudFront,
-              with an ACM certificate issued for that domain.'
             properties:
               bucketName:
                 type: string
               domainName:
+                type: string
+              errorDocument:
+                type: string
+              indexDocument:
+                type: string
+              providerConfigName:
                 type: string
               region:
                 type: string
@@ -34,14 +37,19 @@ spec:
               zoneId:
                 type: string
             required:
-            - bucketName
             - domainName
-            - region
-            - zoneId
+            - bucketName
             type: object
           status:
-            description: Reported once the CloudFront distribution exists.
             properties:
-              cloudFrontDomainName:
+              bucketName:
+                type: string
+              certificateArn:
+                type: string
+              distributionDomainName:
+                type: string
+              domainName:
+                type: string
+              url:
                 type: string
             type: object

@@ -399,3 +399,34 @@ reapplying.
 - `M manifests/crossplane-compositions/dnsvalidatedcertificate/xrd.yaml`
 - `M manifests/crossplane-compositions/staticwebsite/composition.yaml`
 - `M manifests/crossplane-compositions/staticwebsite/xrd.yaml`
+
+### 12. Certificate experiments, and a summary of the Kiln experience
+*2026-11-18T09:04:16 UTC*
+
+Session 80e51230 (2026-11-18, 08:31-09:04). Tested a certificate-first
+composition on the cluster, with a deployment for the trololo site, then
+removed it.
+
+What changed: certificate.k and its test, staticwebsite.k, kiln.toml, and
+deployments/test-trololo/staticwebsite.yaml.
+
+Challenge: the deployment was torn down, and the S3 object and the cluster
+compositions were deleted afterwards. The session's experience notes went
+to kiln-experience-summary.md in the project root.
+
+**Tests:** error[E2G22]: TypeError | error[E2G22]: TypeError | error[E2G22]: TypeError
+**Generation:** ok
+
+**Files changed:**
+- `M kcl-scripts/StaticWebsite_test.k`
+- `A kcl-scripts/certificate.k`
+- `A kcl-scripts/certificate_test.k`
+- `D kcl-scripts/dnsvalidatedcertificate.k`
+- `D kcl-scripts/dnsvalidatedcertificate_test.k`
+- `M kcl-scripts/schemas_compositions.k`
+- `M kcl-scripts/staticwebsite.k`
+- `M kiln.toml`
+- `D manifests/crossplane-compositions/dnsvalidatedcertificate/composition.yaml`
+- `D manifests/crossplane-compositions/dnsvalidatedcertificate/xrd.yaml`
+- `D manifests/crossplane-compositions/staticwebsite/composition.yaml`
+- `M manifests/crossplane-compositions/staticwebsite/xrd.yaml`

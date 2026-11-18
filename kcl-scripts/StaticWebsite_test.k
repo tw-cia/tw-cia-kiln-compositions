@@ -1,262 +1,287 @@
 import json
-
 import .staticwebsite
 
-_siteBaseSpec = {
-    bucketName = "test-trololo-demotw-site"
-    domainName = "test.trololo.demotw.com"
-    region = "us-east-2"
-    zoneId = "Z0510802PA88E7HZZ597"
-}
+_siteDomain = "test.trololo.demotw.com"
+_siteZone = "Z0510802PA88E7HZZ597"
+_siteCertArn = "arn:aws:acm:us-east-1:111122223333:certificate/site-123"
+_siteBucket = "test-trololo-demotw-com"
+_siteNameKey = "krm.kcl.dev/composition-resource-name"
+_siteDistArn = "arn:aws:cloudfront::111122223333:distribution/EDIST123"
 
 _siteBaseOxr = {
     apiVersion = "platform.demotw.com/v1alpha1"
     kind = "StaticWebsite"
-    metadata = {name = "test-trololo-site"}
-    spec = _siteBaseSpec
+    metadata.name = "test-site"
+    spec = {
+        domainName = _siteDomain
+        hostedZoneId = _siteZone
+    }
 }
 
-_siteCertArn = "arn:aws:acm:us-east-1:123456789012:certificate/abc-123"
-_siteOacId = "E2OACEXAMPLE"
-_siteDistArn = "arn:aws:cloudfront::123456789012:distribution/E1DISTEXAMPLE"
-_siteDistDomain = "d111111abcdef8.cloudfront.net"
-
-# Kinds of every resource in a result, in order.
-_siteKinds = lambda resources -> [str] {
-    [r.kind for r in resources]
+_siteWithCertOxr = {
+    apiVersion = _siteBaseOxr.apiVersion
+    kind = _siteBaseOxr.kind
+    metadata.name = _siteBaseOxr.metadata.name
+    spec = _siteBaseOxr.spec | {certificateArn = _siteCertArn}
 }
 
-# The one resource of a given kind.
-_siteOfKind = lambda resources, kind -> any {
-    [r for r in resources if r.kind == kind][0]
+# Observed composed resources, as ocds holds them.
+_siteBucketObs = {Resource = {status = {atProvider = {
+    arn = "arn:aws:s3:::test-trololo-demotw-com"
+    bucketRegionalDomainName = "test-trololo-demotw-com.s3.us-east-1.amazonaws.com"
+}}}}
+_siteBucketEmpty = {Resource = {status = {atProvider = {}}}}
+_siteOacObs = {Resource = {status = {atProvider = {id = "E2OACEXAMPLE"}}}}
+_siteCertObs = {Resource = {status = {arn = _siteCertArn, validated = True}}}
+_siteCertPending = {Resource = {status = {arn = _siteCertArn, validated = False}}}
+_siteDistObs = {Resource = {status = {atProvider = {
+    id = "EDIST123"
+    arn = _siteDistArn
+    domainName = "d111111abcdef8.cloudfront.net"
+}}}}
+
+_siteKindOf = lambda resources, kind -> [any] {
+    [r for r in resources if r.kind == kind]
 }
 
-# --- Cold start -------------------------------------------------------------
-
-test_site_cold_start_requests_bucket_oac_and_nested_certificate = lambda {
-    oxr = {spec = _siteBaseSpec}
-
-    result = staticwebsite.composeStaticWebsite(oxr, {})
-
-    assert _siteKinds(result) == ["Bucket", "OriginAccessControl", "DnsValidatedCertificate"]
+_siteNamed = lambda resources, name -> [any] {
+    [r for r in resources if r.kind != "StaticWebsite" and r.metadata.annotations[_siteNameKey] == name]
 }
 
-test_site_cold_start_builds_no_distribution_or_policy_yet = lambda {
-    result = staticwebsite.composeStaticWebsite({spec = _siteBaseSpec}, {})
+test_site_cold_start_composes_bucket_access_block_and_oac = lambda {
+    result = staticwebsite.composeStaticWebsite(_siteWithCertOxr, {})
 
-    kinds = _siteKinds(result)
-    assert "Distribution" not in kinds
-    assert "BucketPolicy" not in kinds
-    assert "Record" not in kinds
+    assert len(_siteNamed(result, "bucket")) == 1
+    assert len(_siteNamed(result, "publicAccessBlock")) == 1
+    assert len(_siteNamed(result, "originAccessControl")) == 1
+    assert len(result) == 3, "cold start with a certificate ARN composes only the bucket, its block and the OAC"
 }
 
-test_site_bucket_is_private_and_named_by_external_name = lambda {
-    result = staticwebsite.composeStaticWebsite({spec = _siteBaseSpec}, {})
+test_site_composes_a_certificate_xr_when_no_arn_is_given = lambda {
+    result = staticwebsite.composeStaticWebsite(_siteBaseOxr, {})
+    certs = _siteNamed(result, "certificate")
 
-    bucket = _siteOfKind(result, "Bucket")
+    assert len(certs) == 1
+    cert = certs[0]
+    assert cert.apiVersion == "platform.demotw.com/v1alpha1"
+    assert cert.kind == "Certificate"
+    assert cert.spec.domainName == _siteDomain
+    assert cert.spec.hostedZoneId == _siteZone
+    assert cert.spec.region == "us-east-1"
+}
+
+test_site_does_not_compose_a_certificate_when_an_arn_is_given = lambda {
+    result = staticwebsite.composeStaticWebsite(_siteWithCertOxr, {})
+
+    assert len(_siteKindOf(result, "Certificate")) == 0
+}
+
+test_site_bucket_name_defaults_to_the_domain_with_hyphens = lambda {
+    result = staticwebsite.composeStaticWebsite(_siteWithCertOxr, {})
+    bucket = _siteNamed(result, "bucket")[0]
+
     assert bucket.apiVersion == "s3.aws.m.upbound.io/v1beta1"
-    assert bucket.metadata.annotations["crossplane.io/external-name"] == "test-trololo-demotw-site"
-    assert bucket.metadata.annotations["krm.kcl.dev/composition-resource-name"] == "bucket"
-    assert bucket.spec.forProvider.region == "us-east-2"
+    assert bucket.metadata.annotations["crossplane.io/external-name"] == _siteBucket
+    assert bucket.spec.forProvider.region == "us-east-1"
+}
+
+test_site_bucket_name_can_be_set = lambda {
+    oxr = {
+        apiVersion = _siteBaseOxr.apiVersion
+        kind = _siteBaseOxr.kind
+        metadata.name = _siteBaseOxr.metadata.name
+        spec = _siteWithCertOxr.spec | {bucketName = "my-site-bucket"}
+    }
+    result = staticwebsite.composeStaticWebsite(oxr, {})
+    bucket = _siteNamed(result, "bucket")[0]
+
+    assert bucket.metadata.annotations["crossplane.io/external-name"] == "my-site-bucket"
+}
+
+test_site_public_access_block_blocks_all_public_access = lambda {
+    result = staticwebsite.composeStaticWebsite(_siteWithCertOxr, {})
+    block = _siteNamed(result, "publicAccessBlock")[0]
+
+    assert block.apiVersion == "s3.aws.m.upbound.io/v1beta1"
+    assert block.kind == "BucketPublicAccessBlock"
+    assert block.spec.forProvider.bucket == _siteBucket
+    assert block.spec.forProvider.blockPublicAcls
+    assert block.spec.forProvider.blockPublicPolicy
+    assert block.spec.forProvider.ignorePublicAcls
+    assert block.spec.forProvider.restrictPublicBuckets
 }
 
 test_site_origin_access_control_signs_requests_to_s3 = lambda {
-    result = staticwebsite.composeStaticWebsite({spec = _siteBaseSpec}, {})
+    result = staticwebsite.composeStaticWebsite(_siteWithCertOxr, {})
+    oac = _siteNamed(result, "originAccessControl")[0]
 
-    oac = _siteOfKind(result, "OriginAccessControl")
     assert oac.apiVersion == "cloudfront.aws.m.upbound.io/v1beta1"
-    assert oac.metadata.annotations["krm.kcl.dev/composition-resource-name"] == "origin-access-control"
+    assert oac.kind == "OriginAccessControl"
     assert oac.spec.forProvider.originAccessControlOriginType == "s3"
     assert oac.spec.forProvider.signingBehavior == "always"
     assert oac.spec.forProvider.signingProtocol == "sigv4"
 }
 
-test_site_nested_certificate_is_in_us_east_1_whatever_the_bucket_region = lambda {
-    result = staticwebsite.composeStaticWebsite({spec = _siteBaseSpec}, {})
+test_site_distribution_waits_for_bucket_and_oac = lambda {
+    noBucket = staticwebsite.composeStaticWebsite(_siteWithCertOxr, {
+        originAccessControl = _siteOacObs
+    })
+    emptyBucket = staticwebsite.composeStaticWebsite(_siteWithCertOxr, {
+        bucket = _siteBucketEmpty
+        originAccessControl = _siteOacObs
+    })
+    noOac = staticwebsite.composeStaticWebsite(_siteWithCertOxr, {
+        bucket = _siteBucketObs
+    })
 
-    cert = _siteOfKind(result, "DnsValidatedCertificate")
-    assert cert.apiVersion == "platform.demotw.com/v1alpha1"
-    assert cert.metadata.annotations["krm.kcl.dev/composition-resource-name"] == "certificate"
-    assert cert.spec.domainName == "test.trololo.demotw.com"
-    assert cert.spec.zoneId == "Z0510802PA88E7HZZ597"
-    # CloudFront only accepts ACM certificates issued in us-east-1.
-    assert cert.spec.region == "us-east-1"
+    assert len(_siteKindOf(noBucket, "Distribution")) == 0
+    assert len(_siteKindOf(emptyBucket, "Distribution")) == 0
+    assert len(_siteKindOf(noOac, "Distribution")) == 0
 }
 
-test_site_passes_tags_to_bucket_when_set = lambda {
-    oxr = {spec = {
-        bucketName = "test-trololo-demotw-site"
-        domainName = "test.trololo.demotw.com"
-        region = "us-east-2"
-        zoneId = "Z0510802PA88E7HZZ597"
-        tags = {team = "web"}
-    }}
+test_site_distribution_waits_for_the_certificate_to_validate = lambda {
+    result = staticwebsite.composeStaticWebsite(_siteBaseOxr, {
+        bucket = _siteBucketObs
+        originAccessControl = _siteOacObs
+        certificate = _siteCertPending
+    })
 
-    result = staticwebsite.composeStaticWebsite(oxr, {})
-
-    assert _siteOfKind(result, "Bucket").spec.forProvider.tags == {team = "web"}
+    assert len(_siteKindOf(result, "Distribution")) == 0
 }
 
-# --- Waiting on the certificate and the origin access control ---------------
+test_site_distribution_serves_the_bucket_through_oac = lambda {
+    result = staticwebsite.composeStaticWebsite(_siteBaseOxr, {
+        bucket = _siteBucketObs
+        originAccessControl = _siteOacObs
+        certificate = _siteCertObs
+    })
+    dists = _siteKindOf(result, "Distribution")
 
-test_site_waits_for_the_certificate_arn_before_building_the_distribution = lambda {
-    ocds = {
-        "certificate" = {Resource = {status = {}}}
-        "origin-access-control" = {Resource = {status = {atProvider = {id = _siteOacId}}}}
-    }
-
-    result = staticwebsite.composeStaticWebsite({spec = _siteBaseSpec}, ocds)
-
-    assert "Distribution" not in _siteKinds(result)
+    assert len(dists) == 1
+    fp = dists[0].spec.forProvider
+    assert fp.enabled
+    assert fp.aliases == [_siteDomain]
+    assert fp.defaultRootObject == "index.html"
+    assert fp.origin[0].domainName == "test-trololo-demotw-com.s3.us-east-1.amazonaws.com"
+    assert fp.origin[0].originAccessControlId == "E2OACEXAMPLE"
+    assert fp.defaultCacheBehavior.targetOriginId == fp.origin[0].originId
+    assert fp.defaultCacheBehavior.viewerProtocolPolicy == "redirect-to-https"
+    assert fp.viewerCertificate.acmCertificateArn == _siteCertArn
+    assert fp.viewerCertificate.sslSupportMethod == "sni-only"
+    assert fp.viewerCertificate.minimumProtocolVersion == "TLSv1.2_2021"
+    assert fp.restrictions.geoRestriction.restrictionType == "none"
 }
 
-test_site_waits_for_the_origin_access_control_id_before_building_the_distribution = lambda {
-    ocds = {
-        "certificate" = {Resource = {status = {certificateArn = _siteCertArn}}}
-        "origin-access-control" = {Resource = {status = {atProvider = {}}}}
-    }
+test_site_distribution_uses_a_given_certificate_arn = lambda {
+    result = staticwebsite.composeStaticWebsite(_siteWithCertOxr, {
+        bucket = _siteBucketObs
+        originAccessControl = _siteOacObs
+    })
+    dists = _siteKindOf(result, "Distribution")
 
-    result = staticwebsite.composeStaticWebsite({spec = _siteBaseSpec}, ocds)
-
-    assert "Distribution" not in _siteKinds(result)
+    assert len(dists) == 1
+    assert dists[0].spec.forProvider.viewerCertificate.acmCertificateArn == _siteCertArn
 }
-
-# --- Distribution -----------------------------------------------------------
-
-test_site_builds_distribution_once_certificate_and_oac_are_known = lambda {
-    ocds = {
-        "certificate" = {Resource = {status = {certificateArn = _siteCertArn}}}
-        "origin-access-control" = {Resource = {status = {atProvider = {id = _siteOacId}}}}
-    }
-
-    result = staticwebsite.composeStaticWebsite({spec = _siteBaseSpec}, ocds)
-
-    dist = _siteOfKind(result, "Distribution")
-    assert dist.apiVersion == "cloudfront.aws.m.upbound.io/v1beta1"
-    assert dist.spec.forProvider.enabled == True
-    assert dist.spec.forProvider.aliases == ["test.trololo.demotw.com"]
-    assert dist.spec.forProvider.defaultRootObject == "index.html"
-    assert dist.spec.forProvider.viewerCertificate.acmCertificateArn == _siteCertArn
-    assert dist.spec.forProvider.viewerCertificate.sslSupportMethod == "sni-only"
-    assert dist.spec.forProvider.viewerCertificate.minimumProtocolVersion == "TLSv1.2_2021"
-}
-
-test_site_distribution_origin_is_the_bucket_through_oac = lambda {
-    ocds = {
-        "certificate" = {Resource = {status = {certificateArn = _siteCertArn}}}
-        "origin-access-control" = {Resource = {status = {atProvider = {id = _siteOacId}}}}
-    }
-
-    result = staticwebsite.composeStaticWebsite({spec = _siteBaseSpec}, ocds)
-
-    origin = _siteOfKind(result, "Distribution").spec.forProvider.origin[0]
-    assert origin.domainName == "test-trololo-demotw-site.s3.us-east-2.amazonaws.com"
-    assert origin.originAccessControlId == _siteOacId
-    assert origin.s3OriginConfig.originAccessIdentity == ""
-}
-
-test_site_distribution_caches_with_managed_policy_and_forces_https = lambda {
-    ocds = {
-        "certificate" = {Resource = {status = {certificateArn = _siteCertArn}}}
-        "origin-access-control" = {Resource = {status = {atProvider = {id = _siteOacId}}}}
-    }
-
-    result = staticwebsite.composeStaticWebsite({spec = _siteBaseSpec}, ocds)
-
-    behavior = _siteOfKind(result, "Distribution").spec.forProvider.defaultCacheBehavior
-    # AWS managed policy "CachingOptimized".
-    assert behavior.cachePolicyId == "658327ea-f89d-4fab-a63d-7e88639e58f6"
-    assert behavior.viewerProtocolPolicy == "redirect-to-https"
-    assert behavior.targetOriginId == "s3-origin"
-}
-
-# --- Bucket policy ----------------------------------------------------------
 
 test_site_bucket_policy_waits_for_the_distribution_arn = lambda {
-    ocds = {
-        "certificate" = {Resource = {status = {certificateArn = _siteCertArn}}}
-        "origin-access-control" = {Resource = {status = {atProvider = {id = _siteOacId}}}}
-        "distribution" = {Resource = {status = {atProvider = {domainName = _siteDistDomain}}}}
-    }
+    result = staticwebsite.composeStaticWebsite(_siteWithCertOxr, {
+        bucket = _siteBucketObs
+        originAccessControl = _siteOacObs
+    })
 
-    result = staticwebsite.composeStaticWebsite({spec = _siteBaseSpec}, ocds)
-
-    assert "BucketPolicy" not in _siteKinds(result)
+    assert len(_siteKindOf(result, "BucketPolicy")) == 0
 }
 
-test_site_bucket_policy_lets_only_this_distribution_read = lambda {
-    ocds = {
-        "certificate" = {Resource = {status = {certificateArn = _siteCertArn}}}
-        "origin-access-control" = {Resource = {status = {atProvider = {id = _siteOacId}}}}
-        "distribution" = {Resource = {status = {atProvider = {arn = _siteDistArn, domainName = _siteDistDomain}}}}
-    }
+test_site_bucket_policy_only_lets_the_distribution_read = lambda {
+    result = staticwebsite.composeStaticWebsite(_siteWithCertOxr, {
+        bucket = _siteBucketObs
+        originAccessControl = _siteOacObs
+        distribution = _siteDistObs
+    })
+    policies = _siteKindOf(result, "BucketPolicy")
 
-    result = staticwebsite.composeStaticWebsite({spec = _siteBaseSpec}, ocds)
-
-    policyResource = _siteOfKind(result, "BucketPolicy")
-    assert policyResource.spec.forProvider.bucket == "test-trololo-demotw-site"
-    policy = json.decode(policyResource.spec.forProvider.policy)
-    statement = policy.Statement[0]
+    assert len(policies) == 1
+    fp = policies[0].spec.forProvider
+    assert fp.bucket == _siteBucket
+    assert fp.region == "us-east-1"
+    statement = json.decode(fp.policy).Statement[0]
     assert statement.Effect == "Allow"
     assert statement.Principal.Service == "cloudfront.amazonaws.com"
     assert statement.Action == "s3:GetObject"
-    assert statement.Resource == "arn:aws:s3:::test-trololo-demotw-site/*"
+    assert statement.Resource == "arn:aws:s3:::test-trololo-demotw-com/*"
     assert statement.Condition.StringEquals["AWS:SourceArn"] == _siteDistArn
 }
 
-# --- Alias record and status ------------------------------------------------
+test_site_alias_record_waits_for_the_distribution_domain = lambda {
+    result = staticwebsite.composeStaticWebsite(_siteWithCertOxr, {
+        bucket = _siteBucketObs
+        originAccessControl = _siteOacObs
+    })
 
-test_site_no_alias_or_status_until_distribution_domain_is_observed = lambda {
-    ocds = {
-        "certificate" = {Resource = {status = {certificateArn = _siteCertArn}}}
-        "origin-access-control" = {Resource = {status = {atProvider = {id = _siteOacId}}}}
-        "distribution" = {Resource = {status = {atProvider = {arn = _siteDistArn}}}}
-    }
-
-    result = staticwebsite.composeStaticWebsite({spec = _siteBaseSpec}, ocds)
-
-    kinds = _siteKinds(result)
-    assert "Record" not in kinds
-    assert "StaticWebsite" not in kinds
+    assert len(_siteNamed(result, "aliasRecord")) == 0
 }
 
-test_site_creates_alias_record_and_reports_status_once_distribution_domain_is_observed = lambda {
-    ocds = {
-        "certificate" = {Resource = {status = {certificateArn = _siteCertArn}}}
-        "origin-access-control" = {Resource = {status = {atProvider = {id = _siteOacId}}}}
-        "distribution" = {Resource = {status = {atProvider = {arn = _siteDistArn, domainName = _siteDistDomain}}}}
-    }
+test_site_alias_record_points_the_domain_at_the_distribution = lambda {
+    result = staticwebsite.composeStaticWebsite(_siteWithCertOxr, {
+        bucket = _siteBucketObs
+        originAccessControl = _siteOacObs
+        distribution = _siteDistObs
+    })
+    records = _siteNamed(result, "aliasRecord")
 
-    result = staticwebsite.composeStaticWebsite(_siteBaseOxr, ocds)
-
-    record = _siteOfKind(result, "Record")
-    assert record.apiVersion == "route53.aws.m.upbound.io/v1beta1"
-    assert record.spec.forProvider.zoneId == "Z0510802PA88E7HZZ597"
-    assert record.spec.forProvider.name == "test.trololo.demotw.com"
-    assert record.spec.forProvider.$type == "A"
-    assert record.spec.forProvider.alias.name == _siteDistDomain
-    # CloudFront's fixed hosted zone ID, used by every alias to a distribution.
-    assert record.spec.forProvider.alias.zoneId == "Z2FDTNDATAQYW2"
-
-    xr = _siteOfKind(result, "StaticWebsite")
-    assert xr.apiVersion == "platform.demotw.com/v1alpha1"
-    assert xr.metadata.name == "test-trololo-site"
-    assert xr.status.cloudFrontDomainName == _siteDistDomain
+    assert len(records) == 1
+    fp = records[0].spec.forProvider
+    assert records[0].apiVersion == "route53.aws.m.upbound.io/v1beta1"
+    assert fp.zoneId == _siteZone
+    assert fp.name == _siteDomain
+    assert fp.$type == "A"
+    assert fp.alias.name == "d111111abcdef8.cloudfront.net"
+    assert fp.alias.zoneId == "Z2FDTNDATAQYW2"
+    assert not fp.alias.evaluateTargetHealth
 }
 
-# --- Spec pass-through ------------------------------------------------------
+test_site_reports_no_status_until_the_distribution_exists = lambda {
+    result = staticwebsite.composeStaticWebsite(_siteWithCertOxr, {
+        bucket = _siteBucketObs
+        originAccessControl = _siteOacObs
+    })
 
-test_site_tolerates_extra_fields_the_real_control_plane_injects = lambda {
+    assert len(_siteKindOf(result, "StaticWebsite")) == 0
+    assert len([r for r in result if r.kind == "StaticWebsite"]) == 0
+}
+
+test_site_reports_url_and_distribution_once_it_exists = lambda {
+    result = staticwebsite.composeStaticWebsite(_siteWithCertOxr, {
+        bucket = _siteBucketObs
+        originAccessControl = _siteOacObs
+        distribution = _siteDistObs
+    })
+    xrs = [r for r in result if r.kind == "StaticWebsite"]
+
+    assert len(xrs) == 1
+    assert xrs[0].metadata.name == "test-site"
+    assert xrs[0].status.url == "https://test.trololo.demotw.com"
+    assert xrs[0].status.distributionDomainName == "d111111abcdef8.cloudfront.net"
+    assert xrs[0].status.certificateArn == _siteCertArn
+}
+
+test_site_composes_the_whole_site_once_fully_observed = lambda {
+    result = staticwebsite.composeStaticWebsite(_siteWithCertOxr, {
+        bucket = _siteBucketObs
+        originAccessControl = _siteOacObs
+        distribution = _siteDistObs
+    })
+
+    assert len(result) == 7, "bucket, block, OAC, distribution, policy, alias record and the status"
+}
+
+test_site_tolerates_unknown_spec_fields = lambda {
     oxr = {
-        spec = {
-            bucketName = "test-trololo-demotw-site"
-            domainName = "test.trololo.demotw.com"
-            region = "us-east-2"
-            zoneId = "Z0510802PA88E7HZZ597"
-            crossplane = {compositionRef = {name = "staticwebsite-demotw"}}
-        }
+        apiVersion = _siteBaseOxr.apiVersion
+        kind = _siteBaseOxr.kind
+        metadata.name = _siteBaseOxr.metadata.name
+        spec = _siteWithCertOxr.spec | {crossplane = {}}
     }
-
     result = staticwebsite.composeStaticWebsite(oxr, {})
 
     assert len(result) == 3
