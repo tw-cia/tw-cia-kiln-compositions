@@ -520,3 +520,51 @@ WebFleet and CdnDistribution in the next session.
 - `A manifests/crossplane-compositions/tlscertificate/xrd.yaml`
 - `A manifests/crossplane-compositions/webservice/composition.yaml`
 - `A manifests/crossplane-compositions/webservice/xrd.yaml`
+
+### 16. WebFleet and CdnDistribution, from the infrastructure brief
+*2026-11-18T14:00:17 UTC*
+
+Session cf90132b (2026-11-18, 11:14-14:00). Rewrote the infrastructure
+experiments into two kinds: WebFleet (auto-scaling group behind a load
+balancer) and CdnDistribution (CloudFront in front of it), plus a rewrite
+of tlscertificate.k.
+
+What changed: webfleet.k and its test, cdndistribution.k and its test,
+tlscertificate.k and its test.
+
+Reasoning: a WebFleet waits for each of its resources, in order, using
+observed state. The session proposed scheduled scaling as the next step,
+since it would stop the fleet running overnight.
+
+Challenge: the CdnDistribution origin is the load balancer's DNS name,
+over HTTP. Revisited later, when the fleet's listener moved to HTTPS.
+
+**Tests:** error[E2G22]: TypeError | error[E2G22]: TypeError | error[E2G22]: TypeError
+**Generation:** ok
+
+**Files changed:**
+- `D deployments/cdn-web.yaml`
+- `D deployments/web.yaml`
+- `D kcl-scripts/autoscalinggroup.k`
+- `D kcl-scripts/autoscalinggroup_test.k`
+- `M kcl-scripts/cdndistribution.k`
+- `A kcl-scripts/cdndistribution_test.k`
+- `D kcl-scripts/cdnwebservice.k`
+- `D kcl-scripts/cdnwebservice_test.k`
+- `D kcl-scripts/loadbalancer.k`
+- `D kcl-scripts/loadbalancer_test.k`
+- `M kcl-scripts/tlscertificate.k`
+- `M kcl-scripts/tlscertificate_test.k`
+- `A kcl-scripts/webfleet.k`
+- `A kcl-scripts/webfleet_test.k`
+- `D kcl-scripts/webservice.k`
+- `D kcl-scripts/webservice_test.k`
+- `D manifests/crossplane-compositions/autoscalinggroup/composition.yaml`
+- `D manifests/crossplane-compositions/autoscalinggroup/xrd.yaml`
+- `D manifests/crossplane-compositions/cdnwebservice/composition.yaml`
+- `D manifests/crossplane-compositions/cdnwebservice/xrd.yaml`
+- `D manifests/crossplane-compositions/loadbalancer/composition.yaml`
+- `D manifests/crossplane-compositions/loadbalancer/xrd.yaml`
+- `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
+- `D manifests/crossplane-compositions/webservice/composition.yaml`
+- `D manifests/crossplane-compositions/webservice/xrd.yaml`
