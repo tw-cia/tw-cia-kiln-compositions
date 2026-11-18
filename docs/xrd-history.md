@@ -602,3 +602,37 @@ composition, which needed a careful apply order.
 - `M manifests/crossplane-compositions/tlscertificate/xrd.yaml`
 - `A manifests/crossplane-compositions/webfleet/composition.yaml`
 - `A manifests/crossplane-compositions/webfleet/xrd.yaml`
+
+### 18. Environment: a named network with applications in it
+*2026-11-18T15:57:51 UTC*
+
+Session f1f8c1d8 (2026-11-18, 14:23-15:57). Added an Environment kind that
+holds a network and the WebFleets that run in it, and reviewed the schema
+shape. The user asked whether the schemas were nicely shaped and preferred
+nesting by group.
+
+What changed: environment.k and its test, schemas_compositions.k with
+NetworkSpec and EnvironmentNetwork (a union of an existing VPC and a VPC to
+create), and webfleet.k adjusted.
+
+Reasoning: grouping related fields as nested schemas (network, schedule),
+rather than flat objects with many fields.
+
+Challenge: the environment's create-VPC branch is rejected for now, with a
+check, because the creation path does not exist yet.
+
+**Tests:** error[E2G22]: TypeError | error[E2G22]: TypeError | error[E2G22]: TypeError
+**Generation:** ok
+
+**Files changed:**
+- `A kcl-scripts/environment.k`
+- `A kcl-scripts/environment_test.k`
+- `M kcl-scripts/schemas_compositions.k`
+- `M kcl-scripts/webfleet.k`
+- `M kcl-scripts/webfleet_test.k`
+- `M manifests/crossplane-compositions/cdndistribution/composition.yaml`
+- `A manifests/crossplane-compositions/environment/composition.yaml`
+- `A manifests/crossplane-compositions/environment/xrd.yaml`
+- `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
+- `M manifests/crossplane-compositions/webfleet/composition.yaml`
+- `M manifests/crossplane-compositions/webfleet/xrd.yaml`

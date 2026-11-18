@@ -31,19 +31,13 @@ schema ScalingScheduleSpec:
     check:
         minSize is not Undefined or maxSize is not Undefined or desiredCapacity is not Undefined, "a scaling schedule must set minSize, maxSize or desiredCapacity"
 
-# An auto-scaling group of web instances behind an application load balancer.
-# subnetIds holds the load balancer's subnets, which must be public for an
-# internet-facing load balancer. instanceSubnetIds holds the instances' subnets;
-# it defaults to subnetIds, and private subnets with a NAT route are better for
-# instances, so the bootstrap script can reach the internet.
+# The application part of a web fleet: an auto-scaling group of web instances
+# behind an application load balancer, and what they run. It does not say which
+# network the fleet runs in, so an Environment can supply that.
 # userData is a plain-text bootstrap script (cloud-init or a shell script); the
 # launch template receives it base64-encoded, as EC2 requires.
-schema WebFleetSpec:
+schema WebFleetAppSpec:
     name: str
-    region: str = "us-east-1"
-    vpcId: str
-    subnetIds: [str]
-    instanceSubnetIds?: [str]
     imageId: str
     instanceType: str = "t3.micro"
     port: int = 80
@@ -54,8 +48,12 @@ schema WebFleetSpec:
     scalingSchedules?: [ScalingScheduleSpec]
 
     check:
-        len(subnetIds) >= 2, "subnetIds needs at least two subnets, in different zones, for the load balancer"
         minSize <= maxSize, "minSize must not be greater than maxSize"
+
+# A web fleet placed in a network: WebFleetAppSpec plus the region and the network.
+schema WebFleetSpec(WebFleetAppSpec):
+    region: str = "us-east-1"
+    network: NetworkSpec
 
 # loadBalancerDnsName is what a CdnDistribution uses as its origin.
 schema WebFleetStatus:
@@ -82,3 +80,45 @@ schema CdnDistributionSpec:
 schema CdnDistributionStatus:
     distributionArn?: str
     domainName?: str
+
+# The VPC and subnets that resources run in. The subnets must already exist:
+# public ones for internet-facing load balancers, private ones for instances and
+# databases. Two or more in each tier, in different zones.
+schema NetworkSpec:
+    vpcId: str
+    publicSubnetIds: [str]
+    privateSubnetIds: [str]
+
+    check:
+        len(publicSubnetIds) >= 2, "publicSubnetIds needs at least two subnets, in different zones"
+        len(privateSubnetIds) >= 2, "privateSubnetIds needs at least two subnets, in different zones"
+
+# A VPC to create, from a CIDR block, across two or more zones. Not supported yet:
+# an Environment that asks for one is rejected until the create path exists.
+schema CreateVpcSpec:
+    cidrBlock: str
+    availabilityZones: [str]
+
+    check:
+        len(availabilityZones) >= 2, "availabilityZones needs at least two zones"
+
+# An environment's network: a VPC and subnets that already exist (NetworkSpec), or
+# a VPC to create (CreateVpcSpec). Exactly one of the two is given.
+type EnvironmentNetwork = NetworkSpec | CreateVpcSpec
+
+# An environment, such as prod, that holds a network and the applications that
+# run in it. Each application's AWS names are prefixed with the environment name,
+# so two environments can share a region. Application names must be unique.
+schema EnvironmentSpec:
+    name: str
+    region: str = "us-east-1"
+    network: EnvironmentNetwork
+    webFleets?: [WebFleetAppSpec]
+
+    check:
+        len({w.name: True for w in webFleets or []}) == len(webFleets or []), "web fleet names must be unique within an environment"
+
+# webFleetDnsNames maps each web fleet's application name to its load balancer's
+# DNS name, for the fleets whose load balancer exists.
+schema EnvironmentStatus:
+    webFleetDnsNames?: {str:str}

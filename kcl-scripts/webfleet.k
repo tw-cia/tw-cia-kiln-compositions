@@ -20,9 +20,9 @@ composeWebFleet = lambda oxr, ocds -> [any] {
     # Bind XR values to locals before building resource dicts (see kcl-primer).
     _name = spec.name
     _region = spec.region
-    _vpcId = spec.vpcId
-    _subnetIds = spec.subnetIds
-    _instanceSubnetIds = spec.instanceSubnetIds or spec.subnetIds
+    _vpcId = spec.network.vpcId
+    _subnetIds = spec.network.publicSubnetIds
+    _instanceSubnetIds = spec.network.privateSubnetIds
     _port = spec.port
     _healthCheckPath = spec.healthCheckPath
     _minSize = spec.minSize

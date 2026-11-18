@@ -23,10 +23,6 @@ spec:
                 type: string
               imageId:
                 type: string
-              instanceSubnetIds:
-                items:
-                  type: string
-                type: array
               instanceType:
                 default: t3.micro
                 type: string
@@ -40,6 +36,23 @@ spec:
                 type: integer
               name:
                 type: string
+              network:
+                properties:
+                  privateSubnetIds:
+                    items:
+                      type: string
+                    type: array
+                  publicSubnetIds:
+                    items:
+                      type: string
+                    type: array
+                  vpcId:
+                    type: string
+                required:
+                - vpcId
+                - publicSubnetIds
+                - privateSubnetIds
+                type: object
               port:
                 default: 80
                 format: int64
@@ -70,18 +83,11 @@ spec:
                   - recurrence
                   type: object
                 type: array
-              subnetIds:
-                items:
-                  type: string
-                type: array
               userData:
                 type: string
-              vpcId:
-                type: string
             required:
+            - network
             - name
-            - vpcId
-            - subnetIds
             - imageId
             type: object
           status:

@@ -1,0 +1,118 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: environments.platform.example.com
+spec:
+  group: platform.example.com
+  names:
+    kind: Environment
+    plural: environments
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            properties:
+              name:
+                type: string
+              network:
+                type: object
+                properties:
+                  privateSubnetIds:
+                    items:
+                      type: string
+                    type: array
+                  publicSubnetIds:
+                    items:
+                      type: string
+                    type: array
+                  vpcId:
+                    type: string
+                  availabilityZones:
+                    items:
+                      type: string
+                    type: array
+                  cidrBlock:
+                    type: string
+                oneOf:
+                - required:
+                  - vpcId
+                  - publicSubnetIds
+                  - privateSubnetIds
+                - required:
+                  - cidrBlock
+                  - availabilityZones
+              region:
+                default: us-east-1
+                type: string
+              webFleets:
+                items:
+                  properties:
+                    healthCheckPath:
+                      default: /
+                      type: string
+                    imageId:
+                      type: string
+                    instanceType:
+                      default: t3.micro
+                      type: string
+                    maxSize:
+                      default: 2
+                      format: int64
+                      type: integer
+                    minSize:
+                      default: 1
+                      format: int64
+                      type: integer
+                    name:
+                      type: string
+                    port:
+                      default: 80
+                      format: int64
+                      type: integer
+                    scalingSchedules:
+                      items:
+                        properties:
+                          desiredCapacity:
+                            format: int64
+                            type: integer
+                          maxSize:
+                            format: int64
+                            type: integer
+                          minSize:
+                            format: int64
+                            type: integer
+                          name:
+                            type: string
+                          recurrence:
+                            type: string
+                          timeZone:
+                            type: string
+                        required:
+                        - name
+                        - recurrence
+                        type: object
+                      type: array
+                    userData:
+                      type: string
+                  required:
+                  - name
+                  - imageId
+                  type: object
+                type: array
+            required:
+            - name
+            - network
+            type: object
+          status:
+            properties:
+              webFleetDnsNames:
+                additionalProperties:
+                  type: string
+                type: object
+            type: object

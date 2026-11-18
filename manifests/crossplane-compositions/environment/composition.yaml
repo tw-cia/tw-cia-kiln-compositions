@@ -1,0 +1,184 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: environment-kcl-first
+spec:
+  compositeTypeRef:
+    apiVersion: platform.example.com/v1alpha1
+    kind: Environment
+  mode: Pipeline
+  pipeline:
+  - step: compose
+    functionRef:
+      name: function-kcl
+    input:
+      apiVersion: krm.kcl.dev/v1alpha1
+      kind: KCLInput
+      spec:
+        source: |
+          # Curated provider schemas. `kiln import <crd>` appends here.
+
+          # Your composite resource (XR) spec schemas, one per kind, e.g. `schema MyKindSpec:`.
+
+          # A public TLS certificate for one domain, issued by ACM and validated through
+          # DNS records in a Route 53 hosted zone. CloudFront only accepts certificates
+          # from us-east-1, so keep the default region when the certificate is for a
+          # CdnDistribution.
+
+          # certificateArn is set once ACM has created the certificate. validated is true
+          # once ACM reports the DNS validation as complete.
+
+          # One change to the fleet's size, that AWS applies on a cron schedule. recurrence
+          # is a Unix cron expression, for example "0 8 * * MON-FRI" for 08:00 on weekdays,
+          # and timeZone is an IANA name such as "Europe/London" (UTC when it is left out).
+          # Set at least one of minSize, maxSize or desiredCapacity. A value left out is
+          # not changed at that time.
+          schema ScalingScheduleSpec:
+              name: str
+              recurrence: str
+              timeZone?: str
+              minSize?: int
+              maxSize?: int
+              desiredCapacity?: int
+              check:
+                  minSize is not Undefined or maxSize is not Undefined or desiredCapacity is not Undefined, "a scaling schedule must set minSize, maxSize or desiredCapacity"
+
+          # The application part of a web fleet: an auto-scaling group of web instances
+          # behind an application load balancer, and what they run. It does not say which
+          # network the fleet runs in, so an Environment can supply that.
+          # userData is a plain-text bootstrap script (cloud-init or a shell script); the
+          # launch template receives it base64-encoded, as EC2 requires.
+          schema WebFleetAppSpec:
+              name: str
+              imageId: str
+              instanceType: str = "t3.micro"
+              port: int = 80
+              healthCheckPath: str = "/"
+              minSize: int = 1
+              maxSize: int = 2
+              userData?: str
+              scalingSchedules?: [ScalingScheduleSpec]
+              check:
+                  minSize <= maxSize, "minSize must not be greater than maxSize"
+
+          # A web fleet placed in a network: WebFleetAppSpec plus the region and the network.
+          schema WebFleetSpec(WebFleetAppSpec):
+              region: str = "us-east-1"
+              network: NetworkSpec
+
+          # loadBalancerDnsName is what a CdnDistribution uses as its origin.
+
+          # hostedZoneId is the Route 53 zone that gets an alias record for each alias,
+          # pointing it at the distribution. Without it, the aliases are only set on
+          # CloudFront and nothing resolves them.
+          # A CloudFront distribution in front of an origin (such as the load balancer of
+          # a WebFleet). The origin is reached over HTTP, and viewers are redirected to
+          # HTTPS. Every request is forwarded to the origin, with caching disabled, since
+          # the origin is a dynamic application.
+
+          # The VPC and subnets that resources run in. The subnets must already exist:
+          # public ones for internet-facing load balancers, private ones for instances and
+          # databases. Two or more in each tier, in different zones.
+          schema NetworkSpec:
+              vpcId: str
+              publicSubnetIds: [str]
+              privateSubnetIds: [str]
+              check:
+                  len(publicSubnetIds) >= 2, "publicSubnetIds needs at least two subnets, in different zones"
+                  len(privateSubnetIds) >= 2, "privateSubnetIds needs at least two subnets, in different zones"
+
+          # A VPC to create, from a CIDR block, across two or more zones. Not supported yet:
+          # an Environment that asks for one is rejected until the create path exists.
+          schema CreateVpcSpec:
+              cidrBlock: str
+              availabilityZones: [str]
+              check:
+                  len(availabilityZones) >= 2, "availabilityZones needs at least two zones"
+
+          # An environment's network: a VPC and subnets that already exist (NetworkSpec), or
+          # a VPC to create (CreateVpcSpec). Exactly one of the two is given.
+          type EnvironmentNetwork = NetworkSpec | CreateVpcSpec
+
+          # An environment, such as prod, that holds a network and the applications that
+          # run in it. Each application's AWS names are prefixed with the environment name,
+          # so two environments can share a region. Application names must be unique.
+          schema EnvironmentSpec:
+              name: str
+              region: str = "us-east-1"
+              network: EnvironmentNetwork
+              webFleets?: [WebFleetAppSpec]
+              check:
+                  len({w.name: True for w in webFleets or []}) == len(webFleets or []), "web fleet names must be unique within an environment"
+
+          # webFleetDnsNames maps each web fleet's application name to its load balancer's
+          # DNS name, for the fleets whose load balancer exists.
+          schema EnvironmentStatus:
+              webFleetDnsNames?: {str:str}
+
+          # Environment: a named network (such as prod) with the applications that run in
+          # it. Each application is a WebFleet child XR, placed in the environment's
+          # subnets, and named "<environment>-<application>" in AWS. The environment reports
+          # each fleet's load balancer DNS name once the child has one.
+          composeEnvironment = lambda oxr, ocds -> [any] {
+              # Checked before the typed binding below: a VPC to create is a dict that does
+              # not match NetworkSpec, so KCL would otherwise fail with a type error first.
+              assert oxr.spec.network?.vpcId is not Undefined, "creating a VPC is not supported yet"
+              spec: EnvironmentSpec = oxr.spec
+
+              # Bind XR values to locals before building resource dicts (see kcl-primer).
+              _envName = spec.name
+              _region = spec.region
+              _network = spec.network
+              _apps = spec.webFleets or []
+
+              # The child XR's name in the composition, and the observed child's status.
+              _childName = lambda app -> str {"web-fleet-${app.name}"}
+              _observedDnsName = lambda app -> any {
+                  ocds[_childName(app)]?.Resource?.status?.loadBalancerDnsName
+              }
+
+              _webFleets = [{
+                  apiVersion = "platform.demotw.com/v1alpha1"
+                  kind = "WebFleet"
+                  metadata.annotations = {"krm.kcl.dev/composition-resource-name" = _childName(app)}
+                  spec = {
+                      name = "${_envName}-${app.name}"
+                      region = _region
+                      network = _network
+                      imageId = app.imageId
+                      instanceType = app.instanceType
+                      port = app.port
+                      healthCheckPath = app.healthCheckPath
+                      minSize = app.minSize
+                      maxSize = app.maxSize
+                      **({"userData" = app.userData} if app.userData else {})
+                      **({"scalingSchedules" = app.scalingSchedules} if app.scalingSchedules else {})
+                  }
+              } for app in _apps]
+
+              _dnsNames = {app.name: _observedDnsName(app) for app in _apps if _observedDnsName(app)}
+
+              _xr = {
+                  apiVersion = oxr.apiVersion
+                  kind = oxr.kind
+                  metadata = oxr.metadata
+                  status = EnvironmentStatus {webFleetDnsNames = _dnsNames}
+              } if _dnsNames else None
+
+              _webFleets + ([_xr] if _xr else [])
+          }
+
+          _kilnSpecFields = ["name", "network", "region", "webFleets"]
+          _kilnObservedXr = option("params").oxr
+          _kilnOxr = _kilnObservedXr | {spec = {k: v for k, v in _kilnObservedXr.spec if k in _kilnSpecFields}} if _kilnObservedXr?.spec else _kilnObservedXr
+          _kilnProviderConfigRef = {kind = "ClusterProviderConfig", name = "pod-identity"}
+          _kilnIsManaged = lambda r: any -> bool {
+              "forProvider" in (r?.spec or {}) and not (r?.apiVersion or "").startswith("platform.example.com/")
+          }
+          _kilnWithProviderConfig = lambda r: any -> any {
+              r | {spec.providerConfigRef = _kilnProviderConfigRef} if _kilnIsManaged(r) and not r?.spec?.providerConfigRef else r
+          }
+          items = [_kilnWithProviderConfig(r) for r in composeEnvironment(_kilnOxr, option("params").ocds)]
+  - step: auto-ready
+    functionRef:
+      name: function-auto-ready

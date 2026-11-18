@@ -7,8 +7,7 @@ _wfOxr = {
     metadata = {name = "web-fleet"}
     spec = {
         name = "web"
-        vpcId = "vpc-0123456789abcdef0"
-        subnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"]
+        network = {vpcId = "vpc-0123456789abcdef0", publicSubnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"], privateSubnetIds = ["subnet-cccc3333", "subnet-dddd4444"]}
         imageId = "ami-0123456789abcdef0"
     }
 }
@@ -85,8 +84,7 @@ test_webFleet_port_and_health_check_path_are_passed_through = lambda {
         metadata = {name = "web-fleet"}
         spec = {
             name = "web"
-            vpcId = "vpc-0123456789abcdef0"
-            subnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"]
+            network = {vpcId = "vpc-0123456789abcdef0", publicSubnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"], privateSubnetIds = ["subnet-cccc3333", "subnet-dddd4444"]}
             imageId = "ami-0123456789abcdef0"
             port = 8080
             healthCheckPath = "/healthz"
@@ -130,8 +128,7 @@ test_webFleet_launch_template_carries_user_data_base64_encoded = lambda {
         metadata = {name = "web-fleet"}
         spec = {
             name = "web"
-            vpcId = "vpc-0123456789abcdef0"
-            subnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"]
+            network = {vpcId = "vpc-0123456789abcdef0", publicSubnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"], privateSubnetIds = ["subnet-cccc3333", "subnet-dddd4444"]}
             imageId = "ami-0123456789abcdef0"
             userData = _wfUserData
         }
@@ -214,7 +211,7 @@ test_webFleet_listener_waits_for_the_load_balancer = lambda {
     assert len(_wfNamed(result, "listener")) == 0, "no listener until the load balancer is observed"
 }
 
-test_webFleet_autoscaling_group_sizes_and_subnets_default = lambda {
+test_webFleet_autoscaling_group_sizes_and_private_subnets = lambda {
     result = webfleet.composeWebFleet(_wfOxr, _wfStageAll)
     asg = _wfNamed(result, "autoscaling-group")[0]
 
@@ -222,7 +219,7 @@ test_webFleet_autoscaling_group_sizes_and_subnets_default = lambda {
     assert asg.kind == "AutoscalingGroup"
     assert asg.spec.forProvider.minSize == 1
     assert asg.spec.forProvider.maxSize == 2
-    assert asg.spec.forProvider.vpcZoneIdentifier == ["subnet-aaaa1111", "subnet-bbbb2222"]
+    assert asg.spec.forProvider.vpcZoneIdentifier == ["subnet-cccc3333", "subnet-dddd4444"], "instances run in the private subnets"
     assert asg.spec.forProvider.region == "us-east-1"
 }
 
@@ -268,8 +265,7 @@ test_webFleet_no_status_before_the_load_balancer_has_a_dns_name = lambda {
 test_webFleet_spec_accepts_two_subnets_and_ordered_sizes = lambda {
     spec = schemas_compositions.WebFleetSpec {
         name = "web"
-        vpcId = "vpc-0123456789abcdef0"
-        subnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"]
+        network = {vpcId = "vpc-0123456789abcdef0", publicSubnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"], privateSubnetIds = ["subnet-cccc3333", "subnet-dddd4444"]}
         imageId = "ami-0123456789abcdef0"
         minSize = 2
         maxSize = 4
@@ -279,25 +275,13 @@ test_webFleet_spec_accepts_two_subnets_and_ordered_sizes = lambda {
     assert spec.instanceType == "t3.micro"
 }
 
-test_webFleet_instances_use_instance_subnets_when_given = lambda {
-    oxr = {
-        apiVersion = "platform.demotw.com/v1alpha1"
-        kind = "WebFleet"
-        metadata = {name = "web-fleet"}
-        spec = {
-            name = "web"
-            vpcId = "vpc-0123456789abcdef0"
-            subnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"]
-            instanceSubnetIds = ["subnet-cccc3333", "subnet-dddd4444"]
-            imageId = "ami-0123456789abcdef0"
-        }
-    }
-    result = webfleet.composeWebFleet(oxr, _wfStageAll)
+test_webFleet_load_balancer_uses_public_subnets_and_instances_use_private_ones = lambda {
+    result = webfleet.composeWebFleet(_wfOxr, _wfStageAll)
     asg = _wfNamed(result, "autoscaling-group")[0]
     lb = _wfNamed(result, "load-balancer")[0]
 
-    assert asg.spec.forProvider.vpcZoneIdentifier == ["subnet-cccc3333", "subnet-dddd4444"], "instances use their own subnets"
-    assert lb.spec.forProvider.subnets == ["subnet-aaaa1111", "subnet-bbbb2222"], "the load balancer keeps subnetIds"
+    assert lb.spec.forProvider.subnets == ["subnet-aaaa1111", "subnet-bbbb2222"], "the load balancer is internet-facing, so it uses the public subnets"
+    assert asg.spec.forProvider.vpcZoneIdentifier == ["subnet-cccc3333", "subnet-dddd4444"], "the instances use the private subnets"
 }
 
 test_webFleet_alb_egress_reaches_the_instances_on_the_app_port = lambda {
@@ -344,8 +328,7 @@ _wfScheduledOxr = {
     metadata = {name = "web-fleet"}
     spec = {
         name = "web"
-        vpcId = "vpc-0123456789abcdef0"
-        subnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"]
+        network = {vpcId = "vpc-0123456789abcdef0", publicSubnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"], privateSubnetIds = ["subnet-cccc3333", "subnet-dddd4444"]}
         imageId = "ami-0123456789abcdef0"
         scalingSchedules = [
             {name = "morning", recurrence = "0 8 * * MON-FRI", timeZone = "Europe/London", minSize = 2, maxSize = 6}
