@@ -113,6 +113,20 @@ test_staticWebSite_bucket_is_named_by_the_spec_in_the_region = lambda {
     assert bucket.spec.forProvider.region == "us-east-1"
 }
 
+test_staticWebSite_domain_is_a_shared_domain_spec = lambda {
+    domain = schemas_compositions.DomainSpec {
+        name = "docs.example.com"
+        hostedZoneId = "Z0123456789ABCDEFGHIJ"
+    }
+    spec = schemas_compositions.StaticWebSiteSpec {
+        domain = domain
+        bucket = {name = "docs-example-com-assets"}
+    }
+
+    assert spec.domain.name == "docs.example.com"
+    assert spec.domain.hostedZoneId == "Z0123456789ABCDEFGHIJ"
+}
+
 test_staticWebSite_bucket_region_defaults_to_us_east_1 = lambda {
     spec = schemas_compositions.StaticWebSiteSpec {
         domain = {name = "docs.example.com", hostedZoneId = "Z0123456789ABCDEFGHIJ"}

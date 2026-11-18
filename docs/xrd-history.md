@@ -705,3 +705,33 @@ Result: 86 of 86 tests pass.
 - `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
 - `M manifests/crossplane-compositions/webfleet/composition.yaml`
 - `M render-fixtures/staticwebsite/xr.yaml`
+
+### 21. DomainSpec: one shared type for a domain and its hosted zone
+*2026-11-18T16:17:00 UTC*
+
+Session 532bc794, a request for step 1 of the domain proposal (2026-11-18,
+16:15). The user asked whether a shared domain spec made sense. The rule
+for this change: StaticWebSite uses the shared type, and nothing deployed
+moves until a migration is planned.
+
+What changed: a DomainSpec (name, hostedZoneId) replaces the static site's
+own domain spec. A test was added first, and it failed before the schema
+existed.
+
+Reasoning: the same domain-and-zone pair appears in three kinds, and the
+single type gives one place to change it. The other two kinds keep their
+shapes for now, because changing them would break what is deployed.
+
+Result: 87 of 87 tests pass.
+
+**Tests:** PASS: 87/87
+**Generation:** ok
+
+**Files changed:**
+- `M kcl-scripts/StaticWebsite_test.k`
+- `M kcl-scripts/schemas_compositions.k`
+- `M manifests/crossplane-compositions/cdndistribution/composition.yaml`
+- `M manifests/crossplane-compositions/environment/composition.yaml`
+- `M manifests/crossplane-compositions/staticwebsite/composition.yaml`
+- `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
+- `M manifests/crossplane-compositions/webfleet/composition.yaml`

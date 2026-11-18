@@ -589,10 +589,10 @@ spec:
           # webFleetDnsNames maps each web fleet's application name to its load balancer's
           # DNS name, for the fleets whose load balancer exists.
 
-          # The address a static website is served at: name is the domain (such as
+          # A domain a consumer serves something at: name is the domain (such as
           # docs.example.com), and hostedZoneId is the Route 53 zone that holds it. The zone
-          # gets the certificate's validation records and an alias to the distribution.
-          schema StaticWebSiteDomainSpec:
+          # takes the certificate's validation records and the alias records to the service.
+          schema DomainSpec:
               name: str
               hostedZoneId: str
 
@@ -606,7 +606,7 @@ spec:
           # by a CloudFront distribution. The certificate is a TlsCertificate for the domain,
           # validated by DNS in the domain's hosted zone.
           schema StaticWebSiteSpec:
-              domain: StaticWebSiteDomainSpec
+              domain: DomainSpec
               bucket: StaticWebSiteBucketSpec
 
           # distribution holds what CloudFront reports once it has the distribution: its ARN,

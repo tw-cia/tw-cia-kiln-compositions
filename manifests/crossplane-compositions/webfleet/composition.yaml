@@ -1457,9 +1457,9 @@ spec:
           # webFleetDnsNames maps each web fleet's application name to its load balancer's
           # DNS name, for the fleets whose load balancer exists.
 
-          # The address a static website is served at: name is the domain (such as
+          # A domain a consumer serves something at: name is the domain (such as
           # docs.example.com), and hostedZoneId is the Route 53 zone that holds it. The zone
-          # gets the certificate's validation records and an alias to the distribution.
+          # takes the certificate's validation records and the alias records to the service.
 
           # The bucket that holds the site's files. name must be unique across all of AWS.
           # Only the site's CloudFront distribution may read it.
