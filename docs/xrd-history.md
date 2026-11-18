@@ -775,3 +775,35 @@ Result: 94 of 94 tests pass.
 - `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
 - `M manifests/crossplane-compositions/webfleet/composition.yaml`
 - `M manifests/crossplane-compositions/webfleet/xrd.yaml`
+
+### 23. CdnDistribution origin: HTTPS to the fleet's domain
+*2026-11-18T16:34:18 UTC*
+
+Session 532bc794, a request to fix the CloudFront origin first
+(2026-11-18, 16:30-16:34). The fleet now redirects HTTP to HTTPS, so the
+HTTP-only origin would have received 301 responses.
+
+What changed: the origin is reached over https-only on port 443, using the
+fleet's domain name, which its certificate covers. The old origin was the
+load balancer's own DNS name, which the certificate does not cover.
+WebFleetStatus's comment explains the difference.
+
+Challenge: a CdnDistribution already on the cluster that points at a load
+balancer's DNS name will fail once it is updated. Its origin must change to
+the fleet's domain at the same time as the fleet gets its domain.
+
+Result: 95 of 95 tests pass.
+
+**Tests:** PASS: 95/95
+**Generation:** ok
+
+**Files changed:**
+- `M kcl-scripts/cdndistribution.k`
+- `M kcl-scripts/cdndistribution_test.k`
+- `M kcl-scripts/environment_test.k`
+- `M kcl-scripts/schemas_compositions.k`
+- `M manifests/crossplane-compositions/cdndistribution/composition.yaml`
+- `M manifests/crossplane-compositions/environment/composition.yaml`
+- `M manifests/crossplane-compositions/staticwebsite/composition.yaml`
+- `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
+- `M manifests/crossplane-compositions/webfleet/composition.yaml`

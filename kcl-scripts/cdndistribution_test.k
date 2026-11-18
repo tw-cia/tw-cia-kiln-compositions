@@ -1,7 +1,7 @@
 import .cdndistribution
 import .schemas_compositions
 
-_cdnOrigin = "web-123456.us-east-1.elb.amazonaws.com"
+_cdnOrigin = "web.example.com"
 
 _cdnOxr = {
     apiVersion = "platform.demotw.com/v1alpha1"
@@ -38,14 +38,15 @@ test_cdnDistribution_emits_one_distribution_cold = lambda {
     assert dist.metadata.annotations["krm.kcl.dev/composition-resource-name"] == "distribution"
 }
 
-test_cdnDistribution_origin_is_the_load_balancer_over_http = lambda {
+test_cdnDistribution_origin_is_the_fleet_domain_over_https = lambda {
     result = cdndistribution.composeCdnDistribution(_cdnOxr, {})
     origin = _cdnComposed(result)[0].spec.forProvider.origin[0]
 
-    assert origin.domainName == _cdnOrigin
+    assert origin.domainName == _cdnOrigin, "the fleet's domain, which its certificate covers"
     assert origin.originId == "alb-origin"
-    assert origin.customOriginConfig.originProtocolPolicy == "http-only", "the ALB listens on HTTP only"
-    assert origin.customOriginConfig.httpPort == 80
+    assert origin.customOriginConfig.originProtocolPolicy == "https-only", "the fleet redirects HTTP to HTTPS, so the origin is reached over HTTPS"
+    assert origin.customOriginConfig.httpsPort == 443
+    assert origin.customOriginConfig.originSslProtocols == ["TLSv1.2"]
 }
 
 test_cdnDistribution_default_behaviour_redirects_to_https_and_forwards_everything = lambda {

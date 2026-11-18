@@ -1,10 +1,11 @@
 import .schemas_compositions
 import .schemas_providers
 
-# CdnDistribution: a CloudFront distribution in front of an origin (such as the
-# load balancer of a WebFleet). The origin is reached over HTTP. Viewers are
-# redirected to HTTPS, and every request is forwarded to the origin with
-# caching disabled, since the origin is a dynamic application.
+# CdnDistribution: a CloudFront distribution in front of a dynamic origin, such as
+# a WebFleet. The origin is reached over HTTPS at originDomainName, which must be a
+# name the origin serves HTTPS on with a certificate for it (a WebFleet's domain,
+# not its load balancer's own DNS name). Viewers are redirected to HTTPS, and every
+# request is forwarded to the origin with caching disabled.
 composeCdnDistribution = lambda oxr, ocds -> [any] {
     spec: schemas_compositions.CdnDistributionSpec = oxr.spec
 
@@ -35,9 +36,8 @@ composeCdnDistribution = lambda oxr, ocds -> [any] {
             originId = _originId
             domainName = _originDomainName
             customOriginConfig = {
-                httpPort = 80
                 httpsPort = 443
-                originProtocolPolicy = "http-only"
+                originProtocolPolicy = "https-only"
                 originSslProtocols = ["TLSv1.2"]
             }
         }]

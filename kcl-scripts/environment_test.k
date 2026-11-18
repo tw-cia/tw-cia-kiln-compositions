@@ -158,3 +158,11 @@ test_environment_children_keep_emitting_while_status_is_reported = lambda {
 
     assert len(_envChildren(result)) == 2, "the children stay in the desired state after their status is reported"
 }
+
+test_environment_web_fleet_child_serves_the_applications_domain = lambda {
+    result = environment.composeEnvironment(_envOxrTwoFleets, {})
+    child = _envNamed(result, "web-fleet-api")[0]
+
+    assert child.spec.domain.name == "api.example.com"
+    assert child.spec.domain.hostedZoneId == "Z0123456789ABCDEFGHIJ"
+}

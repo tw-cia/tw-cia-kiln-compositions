@@ -58,7 +58,8 @@ schema WebFleetSpec(WebFleetAppSpec):
     region: str = "us-east-1"
     network: NetworkSpec
 
-# loadBalancerDnsName is what a CdnDistribution uses as its origin.
+# loadBalancerDnsName is the load balancer's own DNS name. A CdnDistribution's
+# origin is the fleet's domain instead, which its certificate covers.
 schema WebFleetStatus:
     loadBalancerArn?: str
     loadBalancerDnsName?: str
@@ -66,10 +67,10 @@ schema WebFleetStatus:
 # hostedZoneId is the Route 53 zone that gets an alias record for each alias,
 # pointing it at the distribution. Without it, the aliases are only set on
 # CloudFront and nothing resolves them.
-# A CloudFront distribution in front of an origin (such as the load balancer of
-# a WebFleet). The origin is reached over HTTP, and viewers are redirected to
-# HTTPS. Every request is forwarded to the origin, with caching disabled, since
-# the origin is a dynamic application.
+# A CloudFront distribution in front of a dynamic origin, such as a WebFleet. The
+# origin is reached over HTTPS at originDomainName: a name the origin serves HTTPS
+# on with a certificate for it, such as a WebFleet's domain. Viewers are redirected
+# to HTTPS, and every request is forwarded to the origin, with caching disabled.
 schema CdnDistributionSpec:
     originDomainName: str
     aliases?: [str]
