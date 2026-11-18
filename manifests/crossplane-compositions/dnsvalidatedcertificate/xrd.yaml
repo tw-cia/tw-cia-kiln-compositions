@@ -17,23 +17,31 @@ spec:
         type: object
         properties:
           spec:
-            description: An ACM certificate for one domain, validated by DNS records
-              in a Route 53 hosted zone.
+            description: 'Consumer-facing spec for a DnsValidatedCertificate composite
+              resource: an ACM certificate validated by DNS records in an existing
+              Route53 zone.'
             properties:
               domainName:
                 type: string
               region:
-                default: us-east-1
                 type: string
+              subjectAlternativeNames:
+                items:
+                  type: string
+                type: array
+              tags:
+                additionalProperties:
+                  type: string
+                type: object
               zoneId:
                 type: string
             required:
             - domainName
+            - region
             - zoneId
             type: object
           status:
-            description: The issued certificate's ARN, reported once validation has
-              completed.
+            description: Reported only once ACM has validated the certificate.
             properties:
               certificateArn:
                 type: string

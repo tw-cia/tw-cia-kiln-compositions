@@ -367,3 +367,35 @@ session ended. The notes say to run `kubectl diff` first.
 - `M manifests/crossplane-compositions/staticwebsite/composition.yaml`
 - `M manifests/crossplane-compositions/staticwebsite/xrd.yaml`
 - `D test-trololo-website.yaml`
+
+### 11. dnsvalidatedcertificate: providerConfig set from the cluster
+*2026-11-18T08:06:01 UTC*
+
+Session 19252b21 (2026-11-18, 08:01-08:20). Continued the certificate work,
+and set providerConfig in kiln.toml after reading the cluster.
+
+What changed: kiln.toml (providerConfig), schemas_compositions.k,
+staticwebsite.k and the dnsvalidatedcertificate kind.
+
+Reasoning: the only ClusterProviderConfig on the cluster was `pod-identity`,
+not `default`. Without the setting, the managed resources would have stayed
+unready with no error.
+
+Challenge: name collisions with compositions already on the cluster
+(staticwebsite-kcl-first, dnsvalidatedcertificate) had to be deleted before
+reapplying.
+
+**Tests:** error[E2G22]: TypeError | error[E2G22]: TypeError | error[E2G22]: TypeError
+**Generation:** ok
+
+**Files changed:**
+- `D SESSION-NOTES.md`
+- `M kcl-scripts/StaticWebsite_test.k`
+- `M kcl-scripts/dnsvalidatedcertificate.k`
+- `M kcl-scripts/dnsvalidatedcertificate_test.k`
+- `M kcl-scripts/schemas_compositions.k`
+- `M kcl-scripts/staticwebsite.k`
+- `M manifests/crossplane-compositions/dnsvalidatedcertificate/composition.yaml`
+- `M manifests/crossplane-compositions/dnsvalidatedcertificate/xrd.yaml`
+- `M manifests/crossplane-compositions/staticwebsite/composition.yaml`
+- `M manifests/crossplane-compositions/staticwebsite/xrd.yaml`

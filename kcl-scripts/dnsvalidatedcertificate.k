@@ -1,86 +1,78 @@
 import .schemas_compositions
 import .schemas_providers
 
-_dvcCertificateRes = "certificate"
-_dvcValidationRes = "certificate-validation"
-_dvcValidationRecordPrefix = "validation-record-"
-
-# Typed read of the observed certificate. Only called once the atProvider exists.
-_dvcCertificateStatus = lambda atProvider -> schemas_providers.AcmAwsmUpboundIoV1beta1CertificateStatusAtProvider {
-    _status: schemas_providers.AcmAwsmUpboundIoV1beta1CertificateStatusAtProvider = atProvider
-    _status
-}
-
-_dvcValidationRecordForProvider = lambda zoneId, opt -> schemas_providers.Route53AwsmUpboundIoV1beta1RecordSpecForProvider {
-    _forProvider: schemas_providers.Route53AwsmUpboundIoV1beta1RecordSpecForProvider = {
-        zoneId = zoneId
-        name = opt.resourceRecordName
-        $type = opt.resourceRecordType
-        records = [opt.resourceRecordValue]
-        ttl = 60
-        allowOverwrite = True
-    }
-    _forProvider
-}
-
 composeDnsValidatedCertificate = lambda oxr, ocds -> [any] {
     spec: schemas_compositions.DnsValidatedCertificateSpec = oxr.spec
-    _domainName = spec.domainName
-    _zoneId = spec.zoneId
-    _region = spec.region
 
-    _observedCertAtProvider = ocds[_dvcCertificateRes]?.Resource?.status?.atProvider
-    _observedCert = _dvcCertificateStatus(_observedCertAtProvider) if _observedCertAtProvider else None
-    _certArn = _observedCert?.arn
-    _validationOptions = _observedCert?.domainValidationOptions or []
-    _validationFqdns = [opt.resourceRecordName for opt in _validationOptions]
+    _certificateName = "certificate"
+    _validationName = "certificate-validation"
 
-    _certForProvider: schemas_providers.AcmAwsmUpboundIoV1beta1CertificateSpecForProvider = {
-        domainName = _domainName
+    _certificateForProvider: schemas_providers.AcmAwsmUpboundIoV1beta1CertificateSpecForProvider = {
+        region = spec.region
+        domainName = spec.domainName
+        subjectAlternativeNames = spec.subjectAlternativeNames
+        tags = spec.tags
         validationMethod = "DNS"
-        region = _region
     }
+
     _certificate = {
         apiVersion = "acm.aws.m.upbound.io/v1beta1"
         kind = "Certificate"
         metadata.annotations = {
-            "krm.kcl.dev/composition-resource-name" = _dvcCertificateRes
+            "krm.kcl.dev/composition-resource-name" = _certificateName
         }
-        spec.forProvider = _certForProvider
+        spec.forProvider = _certificateForProvider
     }
+
+    _observedCertificate = ocds[_certificateName]?.Resource?.status?.atProvider
+    _arn = _observedCertificate?.arn
+    _validationOptions = _observedCertificate?.domainValidationOptions or []
+
+    # ACM gives a wildcard and its apex the same validation CNAME. Create each
+    # distinct record once, or Route53 rejects the duplicate.
+    _uniqueOptions = [opt for i, opt in _validationOptions if not any_true([prior.resourceRecordName == opt.resourceRecordName for prior in _validationOptions[0:i]])]
 
     _validationRecords = [{
         apiVersion = "route53.aws.m.upbound.io/v1beta1"
         kind = "Record"
         metadata.annotations = {
-            "krm.kcl.dev/composition-resource-name" = "${_dvcValidationRecordPrefix}${i}"
+            "krm.kcl.dev/composition-resource-name" = "validation-record-${i}"
         }
-        spec.forProvider = _dvcValidationRecordForProvider(_zoneId, opt)
-    } for i, opt in _validationOptions]
+        spec.forProvider = schemas_providers.Route53AwsmUpboundIoV1beta1RecordSpecForProvider {
+            zoneId = spec.zoneId
+            name = opt.resourceRecordName
+            $type = opt.resourceRecordType
+            records = [opt.resourceRecordValue]
+            ttl = 300
+        }
+    } for i, opt in _uniqueOptions]
 
-    _validationForProvider: schemas_providers.AcmAwsmUpboundIoV1beta1CertificateValidationSpecForProvider = {
-        certificateArn = _certArn
-        region = _region
-        validationRecordFqdns = _validationFqdns
-    }
-    _validation = {
+    _validationFqdns = [opt.resourceRecordName for opt in _uniqueOptions]
+
+    _certificateValidation = {
         apiVersion = "acm.aws.m.upbound.io/v1beta1"
         kind = "CertificateValidation"
         metadata.annotations = {
-            "krm.kcl.dev/composition-resource-name" = _dvcValidationRes
+            "krm.kcl.dev/composition-resource-name" = _validationName
         }
-        spec.forProvider = _validationForProvider
-    } if _certArn and len(_validationFqdns) > 0 else None
+        spec.forProvider = schemas_providers.AcmAwsmUpboundIoV1beta1CertificateValidationSpecForProvider {
+            region = spec.region
+            certificateArn = _arn
+            validationRecordFqdns = _validationFqdns
+        }
+    } if _arn and len(_validationFqdns) > 0 else None
 
-    _validationConditions = ocds[_dvcValidationRes]?.Resource?.status?.conditions or []
-    _validated = len([c for c in _validationConditions if c.type == "Ready" and c.status == "True"]) > 0
+    # Report the ARN only once ACM has issued the certificate, so a consumer
+    # (the StaticWebsite distribution) never attaches a pending certificate.
+    _validationConditions = ocds[_validationName]?.Resource?.status?.conditions or []
+    _validated = any_true([c.type == "Ready" and c.status == "True" for c in _validationConditions])
 
-    _xr = {
+    _dxr = {
         apiVersion = oxr.apiVersion
         kind = oxr.kind
         metadata = oxr.metadata
-        status = schemas_compositions.DnsValidatedCertificateStatus {certificateArn = _certArn}
-    } if _validated and _certArn else None
+        status = schemas_compositions.DnsValidatedCertificateStatus {certificateArn = _arn}
+    } if _validated and _arn else None
 
-    [_certificate] + _validationRecords + ([_validation] if _validation else []) + ([_xr] if _xr else [])
+    [_certificate] + _validationRecords + ([_certificateValidation] if _certificateValidation else []) + ([_dxr] if _dxr else [])
 }
