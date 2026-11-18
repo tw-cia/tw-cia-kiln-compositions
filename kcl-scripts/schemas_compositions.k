@@ -64,22 +64,30 @@ schema WebFleetStatus:
     loadBalancerArn?: str
     loadBalancerDnsName?: str
 
-# hostedZoneId is the Route 53 zone that gets an alias record for each alias,
-# pointing it at the distribution. Without it, the aliases are only set on
-# CloudFront and nothing resolves them.
-# A CloudFront distribution in front of a dynamic origin, such as a WebFleet. The
-# origin is reached over HTTPS at originDomainName: a name the origin serves HTTPS
-# on with a certificate for it, such as a WebFleet's domain. Viewers are redirected
-# to HTTPS, and every request is forwarded to the origin, with caching disabled.
-schema CdnDistributionSpec:
-    originDomainName: str
-    aliases?: [str]
-    certificateArn?: str
-    hostedZoneId?: str
-    priceClass: str = "PriceClass_100"
+# An S3 bucket that the distribution serves, read through an origin access control.
+# The bucket is private: only this distribution may read it. name must be unique
+# across all of AWS.
+schema S3OriginSpec:
+    bucketName: str
+    region: str = "us-east-1"
 
-    check:
-        not aliases or certificateArn, "aliases need certificateArn, an ACM certificate in us-east-1"
+# An HTTPS origin that already exists: a name it serves HTTPS on, with a certificate
+# for that name, such as a WebFleet's domain.
+schema HttpsOriginSpec:
+    domainName: str
+
+# Where a distribution's content comes from: an S3 bucket it creates, or an HTTPS
+# origin that already exists. Give exactly one. The fields do not overlap, so the
+# closed schemas tell the two forms apart.
+type OriginSpec = S3OriginSpec | HttpsOriginSpec
+
+# A CloudFront distribution serving content from one origin at domain. The domain's
+# certificate is created and validated by DNS, as a child TlsCertificate. Viewers are
+# redirected to HTTPS.
+schema CdnDistributionSpec:
+    domain: DomainSpec
+    origin: OriginSpec
+    priceClass: str = "PriceClass_100"
 
 schema CdnDistributionStatus:
     distributionArn?: str

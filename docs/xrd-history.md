@@ -807,3 +807,45 @@ Result: 95 of 95 tests pass.
 - `M manifests/crossplane-compositions/staticwebsite/composition.yaml`
 - `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
 - `M manifests/crossplane-compositions/webfleet/composition.yaml`
+
+### 24. CdnDistribution: one origin union, an S3 origin or an HTTPS origin
+*2026-11-18T16:48:06 UTC*
+
+Session 532bc794, a request to try a union type for origins (2026-11-18,
+16:41-16:48). CdnDistribution takes a domain and an origin. The origin is a
+union of S3OriginSpec (a bucket this kind creates) and HttpsOriginSpec (a
+domain that already exists).
+
+What changed: the origin union, with each form's schema closed. The
+composition branches on the origin's shape. The S3 branch adds the bucket,
+public access block, origin access control and bucket policy, the same as
+StaticWebSite. The HTTPS branch is the origin from the previous commit.
+The alias record and status are shared.
+
+Reasoning: a KCL union of closed schemas works with plain fields, without a
+key. Typed assignment picks the right member, and a spec with both or
+neither fails. The generated XRD shows the same rule as a oneOf.
+
+Challenge: a dict literal inside a schema instance does not match the union,
+so the tests build the origin through a typed variable. The S3 branch has no
+render fixture of its own, because Kiln takes one sample XR per kind. It was
+checked in a scratch copy instead.
+
+Result: 102 of 102 tests pass.
+
+Not yet done: StaticWebSite still carries its own copy of the S3 logic. The
+planned next step is to make StaticWebSite a preset over CdnDistribution.
+
+**Tests:** PASS: 102/102
+**Generation:** ok
+
+**Files changed:**
+- `M kcl-scripts/cdndistribution.k`
+- `M kcl-scripts/cdndistribution_test.k`
+- `M kcl-scripts/schemas_compositions.k`
+- `M manifests/crossplane-compositions/cdndistribution/composition.yaml`
+- `M manifests/crossplane-compositions/cdndistribution/xrd.yaml`
+- `M manifests/crossplane-compositions/environment/composition.yaml`
+- `M manifests/crossplane-compositions/staticwebsite/composition.yaml`
+- `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
+- `M manifests/crossplane-compositions/webfleet/composition.yaml`
