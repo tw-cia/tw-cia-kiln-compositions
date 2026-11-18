@@ -34,10 +34,13 @@ schema ScalingScheduleSpec:
 # The application part of a web fleet: an auto-scaling group of web instances
 # behind an application load balancer, and what they run. It does not say which
 # network the fleet runs in, so an Environment can supply that.
+# domain is the address the fleet serves HTTPS on. The fleet gets a certificate for
+# it in its own region, and HTTP on port 80 redirects to HTTPS.
 # userData is a plain-text bootstrap script (cloud-init or a shell script); the
 # launch template receives it base64-encoded, as EC2 requires.
 schema WebFleetAppSpec:
     name: str
+    domain: DomainSpec
     imageId: str
     instanceType: str = "t3.micro"
     port: int = 80

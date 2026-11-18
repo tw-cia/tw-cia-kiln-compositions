@@ -735,3 +735,43 @@ Result: 87 of 87 tests pass.
 - `M manifests/crossplane-compositions/staticwebsite/composition.yaml`
 - `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
 - `M manifests/crossplane-compositions/webfleet/composition.yaml`
+
+### 22. WebFleet serves HTTPS on its own domain
+*2026-11-18T16:30:41 UTC*
+
+Session 532bc794, a request for WebFleet to serve HTTPS with a name
+(2026-11-18, 16:23-16:30). The fleet now takes a required domain.
+
+What changed: WebFleetAppSpec takes `domain: DomainSpec`. The fleet creates
+a child TlsCertificate in its own region, because an ALB needs its
+certificate in its region. It adds an HTTPS listener on 443 that waits for
+the certificate to validate, a redirect from port 80 to HTTPS, a 443 ingress
+rule, and an alias record to the load balancer, using the zone ID AWS
+reports for that load balancer. Environment passes each app's domain
+through.
+
+Reasoning: the redirect and the HTTPS listener both wait for the validated
+certificate, so no request is redirected to a listener that does not exist.
+
+Challenge: this is a breaking change. A WebFleet already on the cluster has
+no domain, so it fails validation on its next update. Not applied to the
+cluster.
+
+Result: 94 of 94 tests pass.
+
+**Tests:** PASS: 94/94
+**Generation:** ok
+
+**Files changed:**
+- `M kcl-scripts/environment.k`
+- `M kcl-scripts/environment_test.k`
+- `M kcl-scripts/schemas_compositions.k`
+- `M kcl-scripts/webfleet.k`
+- `M kcl-scripts/webfleet_test.k`
+- `M manifests/crossplane-compositions/cdndistribution/composition.yaml`
+- `M manifests/crossplane-compositions/environment/composition.yaml`
+- `M manifests/crossplane-compositions/environment/xrd.yaml`
+- `M manifests/crossplane-compositions/staticwebsite/composition.yaml`
+- `M manifests/crossplane-compositions/tlscertificate/composition.yaml`
+- `M manifests/crossplane-compositions/webfleet/composition.yaml`
+- `M manifests/crossplane-compositions/webfleet/xrd.yaml`

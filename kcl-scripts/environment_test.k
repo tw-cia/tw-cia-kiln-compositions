@@ -1,5 +1,7 @@
 import .environment
 
+_envDomain = {name = "web.example.com", hostedZoneId = "Z0123456789ABCDEFGHIJ"}
+
 _envOxr = {
     apiVersion = "platform.demotw.com/v1alpha1"
     kind = "Environment"
@@ -11,13 +13,13 @@ _envOxr = {
             publicSubnetIds = ["subnet-pub-a", "subnet-pub-b"]
             privateSubnetIds = ["subnet-priv-a", "subnet-priv-b"]
         }
-        webFleets = [{name = "web", imageId = "ami-0123456789abcdef0"}]
+        webFleets = [{name = "web", domain = _envDomain, imageId = "ami-0123456789abcdef0"}]
     }
 }
 
 _envOxrTwoFleets = _envOxr | {spec.webFleets = [
-    {name = "web", imageId = "ami-0123456789abcdef0"}
-    {name = "api", imageId = "ami-0fedcba9876543210", port = 8080, minSize = 2, maxSize = 4}
+    {name = "web", domain = _envDomain, imageId = "ami-0123456789abcdef0"}
+    {name = "api", domain = {name = "api.example.com", hostedZoneId = "Z0123456789ABCDEFGHIJ"}, imageId = "ami-0fedcba9876543210", port = 8080, minSize = 2, maxSize = 4}
 ]}
 
 _envOxrNoFleets = _envOxr | {spec.webFleets = []}
@@ -85,6 +87,7 @@ test_environment_web_fleet_child_gets_the_application_defaults = lambda {
 test_environment_web_fleet_child_passes_application_fields_through = lambda {
     oxr = _envOxr | {spec.webFleets = [{
         name = "api"
+        domain = {name = "api.example.com", hostedZoneId = "Z0123456789ABCDEFGHIJ"}
         imageId = "ami-0fedcba9876543210"
         instanceType = "m5.large"
         port = 8080

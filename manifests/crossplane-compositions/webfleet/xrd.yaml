@@ -18,6 +18,16 @@ spec:
         properties:
           spec:
             properties:
+              domain:
+                properties:
+                  hostedZoneId:
+                    type: string
+                  name:
+                    type: string
+                required:
+                - name
+                - hostedZoneId
+                type: object
               healthCheckPath:
                 default: /
                 type: string
@@ -88,6 +98,7 @@ spec:
             required:
             - network
             - name
+            - domain
             - imageId
             type: object
           status:

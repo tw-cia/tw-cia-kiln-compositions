@@ -1334,6 +1334,120 @@ spec:
               resolution?: "Required" | "Optional" = "Required"
               resolve?: "Always" | "IfNotPresent"
 
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderAlias:
+              evaluateTargetHealth?: bool
+              name?: str
+              zoneId?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderCidrRoutingPolicy:
+              collectionId?: str
+              locationName?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderFailoverRoutingPolicy:
+              $type?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeolocationRoutingPolicy:
+              continent?: str
+              country?: str
+              subdivision?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeoproximityRoutingPolicy:
+              awsRegion?: str
+              bias?: float
+              coordinates?: [Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeoproximityRoutingPolicyCoordinates]
+              localZoneGroup?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDRef:
+              name: str
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDRefPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDSelectorPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderLatencyRoutingPolicy:
+              region: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsRefs:
+              name: str
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsRefsPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsSelectorPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderWeightedRoutingPolicy:
+              weight?: float
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDRef:
+              name: str
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDRefPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDSelectorPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeoproximityRoutingPolicyCoordinates:
+              latitude?: str
+              longitude?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsRefsPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProvider:
+              alias?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderAlias
+              allowOverwrite?: bool
+              cidrRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderCidrRoutingPolicy
+              failoverRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderFailoverRoutingPolicy
+              geolocationRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeolocationRoutingPolicy
+              geoproximityRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeoproximityRoutingPolicy
+              healthCheckId?: str
+              healthCheckIdRef?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDRef
+              healthCheckIdSelector?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDSelector
+              latencyRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderLatencyRoutingPolicy
+              multivalueAnswerRoutingPolicy?: bool
+              name?: str
+              records?: [str]
+              recordsRefs?: [Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsRefs]
+              recordsSelector?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsSelector
+              setIdentifier?: str
+              ttl?: float
+              $type?: str
+              weightedRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderWeightedRoutingPolicy
+              zoneId?: str
+              zoneIdRef?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDRef
+              zoneIdSelector?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDSelector
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
           schema AutoscalingAwsmUpboundIoV1beta1ScheduleSpecForProviderAutoscalingGroupNameRefPolicy:
               resolution?: "Required" | "Optional" = "Required"
               resolve?: "Always" | "IfNotPresent"
@@ -1372,6 +1486,10 @@ spec:
           # DNS records in a Route 53 hosted zone. CloudFront only accepts certificates
           # from us-east-1, so keep the default region when the certificate is for a
           # CdnDistribution.
+          schema TlsCertificateSpec:
+              domainName: str
+              hostedZoneId: str
+              region: str = "us-east-1"
 
           # certificateArn is set once ACM has created the certificate. validated is true
           # once ACM reports the DNS validation as complete.
@@ -1394,10 +1512,13 @@ spec:
           # The application part of a web fleet: an auto-scaling group of web instances
           # behind an application load balancer, and what they run. It does not say which
           # network the fleet runs in, so an Environment can supply that.
+          # domain is the address the fleet serves HTTPS on. The fleet gets a certificate for
+          # it in its own region, and HTTP on port 80 redirects to HTTPS.
           # userData is a plain-text bootstrap script (cloud-init or a shell script); the
           # launch template receives it base64-encoded, as EC2 requires.
           schema WebFleetAppSpec:
               name: str
+              domain: DomainSpec
               imageId: str
               instanceType: str = "t3.micro"
               port: int = 80
@@ -1460,6 +1581,9 @@ spec:
           # A domain a consumer serves something at: name is the domain (such as
           # docs.example.com), and hostedZoneId is the Route 53 zone that holds it. The zone
           # takes the certificate's validation records and the alias records to the service.
+          schema DomainSpec:
+              name: str
+              hostedZoneId: str
 
           # The bucket that holds the site's files. name must be unique across all of AWS.
           # Only the site's CloudFront distribution may read it.
@@ -1493,6 +1617,8 @@ spec:
               _vpcId = spec.network.vpcId
               _subnetIds = spec.network.publicSubnetIds
               _instanceSubnetIds = spec.network.privateSubnetIds
+              _domainName = spec.domain.name
+              _hostedZoneId = spec.domain.hostedZoneId
               _port = spec.port
               _healthCheckPath = spec.healthCheckPath
               _minSize = spec.minSize
@@ -1511,7 +1637,11 @@ spec:
               _launchTemplateName = "launch-template"
               _loadBalancerName = "load-balancer"
               _targetGroupName = "target-group"
-              _listenerName = "listener"
+              _httpListenerName = "http-listener"
+              _httpsListenerName = "https-listener"
+              _httpsIngressName = "alb-https-ingress"
+              _certificateName = "certificate"
+              _aliasRecordName = "alias-record"
               _autoScalingGroupName = "autoscaling-group"
 
               _albSgId = ocds[_albSgName]?.Resource?.status?.atProvider?.id
@@ -1520,7 +1650,14 @@ spec:
               _lbAtProvider = ocds[_loadBalancerName]?.Resource?.status?.atProvider
               _lbArn = _lbAtProvider?.arn
               _lbDnsName = _lbAtProvider?.dnsName
+              _lbZoneId = _lbAtProvider?.zoneId
               _launchTemplateId = ocds[_launchTemplateName]?.Resource?.status?.atProvider?.id
+
+              # The certificate is a child XR in the fleet's region: an ALB needs a certificate
+              # in its own region. Its status is read uncast, so it carries conditions too.
+              _certificateStatus = ocds[_certificateName]?.Resource?.status
+              _certificateArn = _certificateStatus?.certificateArn
+              _certificateValidated = _certificateStatus?.validated or False
 
               # Ungated: these two security groups are the first things created.
               _albSecurityGroupForProvider: Ec2AwsmUpboundIoV1beta1SecurityGroupSpecForProvider = {
@@ -1612,16 +1749,74 @@ spec:
                   cidrBlocks = ["0.0.0.0/0"]
               })] if _instanceSgId else []
 
-              _listeners = [awsResource("elbv2.aws.m.upbound.io/v1beta1", "LBListener", _listenerName, Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProvider {
+              _albHttpsIngressRules = [awsResource("ec2.aws.m.upbound.io/v1beta1", "SecurityGroupRule", _httpsIngressName, Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProvider {
+                  region = _region
+                  securityGroupId = _albSgId
+                  $type = "ingress"
+                  $protocol = "tcp"
+                  fromPort = 443
+                  toPort = 443
+                  cidrBlocks = ["0.0.0.0/0"]
+              })] if _albSgId else []
+
+              # The certificate is validated before either listener exists, so nothing redirects
+              # to an HTTPS listener that is not there yet.
+              _httpsListeners = [awsResource("elbv2.aws.m.upbound.io/v1beta1", "LBListener", _httpsListenerName, Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProvider {
+                  region = _region
+                  loadBalancerArn = _lbArn
+                  port = 443
+                  $protocol = "HTTPS"
+                  certificateArn = _certificateArn
+                  sslPolicy = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+                  defaultAction = [Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultAction {
+                      $type = "forward"
+                      targetGroupArn = _targetGroupArn
+                  }]
+              })] if _lbArn and _targetGroupArn and _certificateValidated else []
+
+              _httpListeners = [awsResource("elbv2.aws.m.upbound.io/v1beta1", "LBListener", _httpListenerName, Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProvider {
                   region = _region
                   loadBalancerArn = _lbArn
                   port = 80
                   $protocol = "HTTP"
                   defaultAction = [Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultAction {
-                      $type = "forward"
-                      targetGroupArn = _targetGroupArn
+                      $type = "redirect"
+                      redirect = Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionRedirect {
+                          $protocol = "HTTPS"
+                          port = "443"
+                          statusCode = "HTTP_301"
+                      }
                   }]
-              })] if _lbArn and _targetGroupArn else []
+              })] if _lbArn and _targetGroupArn and _certificateValidated else []
+
+              _certificate = {
+                  apiVersion = "platform.demotw.com/v1alpha1"
+                  kind = "TlsCertificate"
+                  metadata.annotations = {"krm.kcl.dev/composition-resource-name" = _certificateName}
+                  spec = TlsCertificateSpec {
+                      domainName = _domainName
+                      hostedZoneId = _hostedZoneId
+                      region = _region
+                  }
+              }
+
+              # The domain points at the load balancer, which AWS names with its own zone ID per region.
+              _aliasRecords = [{
+                  apiVersion = "route53.aws.m.upbound.io/v1beta1"
+                  kind = "Record"
+                  metadata.annotations = {"krm.kcl.dev/composition-resource-name" = _aliasRecordName}
+                  spec.forProvider = Route53AwsmUpboundIoV1beta1RecordSpecForProvider {
+                      zoneId = _hostedZoneId
+                      name = _domainName
+                      $type = "A"
+                      allowOverwrite = True
+                      alias = Route53AwsmUpboundIoV1beta1RecordSpecForProviderAlias {
+                          name = _lbDnsName
+                          zoneId = _lbZoneId
+                          evaluateTargetHealth = True
+                      }
+                  }
+              }] if _lbDnsName and _lbZoneId else []
 
               _autoScalingGroups = [awsResource("autoscaling.aws.m.upbound.io/v1beta1", "AutoscalingGroup", _autoScalingGroupName, AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProvider {
                   region = _region
@@ -1660,10 +1855,10 @@ spec:
                   status = WebFleetStatus {loadBalancerArn = _lbArn, loadBalancerDnsName = _lbDnsName}
               } if _lbDnsName else None
 
-              [_albSecurityGroup, _instanceSecurityGroup] + _targetGroups + _albIngressRules + _loadBalancers + _launchTemplates + _instanceIngressRules + _albEgressRules + _instanceEgressRules + _listeners + _autoScalingGroups + _scalingScheduleActions + ([_xr] if _xr else [])
+              [_certificate, _albSecurityGroup, _instanceSecurityGroup] + _targetGroups + _albIngressRules + _albHttpsIngressRules + _loadBalancers + _launchTemplates + _instanceIngressRules + _albEgressRules + _instanceEgressRules + _httpListeners + _httpsListeners + _aliasRecords + _autoScalingGroups + _scalingScheduleActions + ([_xr] if _xr else [])
           }
 
-          _kilnSpecFields = ["healthCheckPath", "imageId", "instanceType", "maxSize", "minSize", "name", "network", "port", "region", "scalingSchedules", "userData"]
+          _kilnSpecFields = ["domain", "healthCheckPath", "imageId", "instanceType", "maxSize", "minSize", "name", "network", "port", "region", "scalingSchedules", "userData"]
           _kilnObservedXr = option("params").oxr
           _kilnOxr = _kilnObservedXr | {spec = {k: v for k, v in _kilnObservedXr.spec if k in _kilnSpecFields}} if _kilnObservedXr?.spec else _kilnObservedXr
           _kilnProviderConfigRef = {kind = "ClusterProviderConfig", name = "pod-identity"}

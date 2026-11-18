@@ -36,6 +36,7 @@ composeEnvironment = lambda oxr, ocds -> [any] {
             healthCheckPath = app.healthCheckPath
             minSize = app.minSize
             maxSize = app.maxSize
+            domain = app.domain
             **({"userData" = app.userData} if app.userData else {})
             **({"scalingSchedules" = app.scalingSchedules} if app.scalingSchedules else {})
         }

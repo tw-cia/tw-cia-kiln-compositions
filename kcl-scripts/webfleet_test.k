@@ -1,12 +1,15 @@
 import .webfleet
 import .schemas_compositions
 
+_wfDomain = {name = "web.example.com", hostedZoneId = "Z0123456789ABCDEFGHIJ"}
+
 _wfOxr = {
     apiVersion = "platform.demotw.com/v1alpha1"
     kind = "WebFleet"
     metadata = {name = "web-fleet"}
     spec = {
         name = "web"
+        domain = _wfDomain
         network = {vpcId = "vpc-0123456789abcdef0", publicSubnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"], privateSubnetIds = ["subnet-cccc3333", "subnet-dddd4444"]}
         imageId = "ami-0123456789abcdef0"
     }
@@ -15,20 +18,30 @@ _wfOxr = {
 _wfUserData = "#!/bin/bash\necho hello from the fleet\n"
 _wfUserDataBase64 = "IyEvYmluL2Jhc2gKZWNobyBoZWxsbyBmcm9tIHRoZSBmbGVldAo="
 
+_wfCertArn = "arn:aws:acm:us-east-1:111111111111:certificate/web-example"
+_wfLbArn = "arn:aws:elasticloadbalancing:us-east-1:111111111111:loadbalancer/app/web/abcdef"
+_wfTargetGroupArn = "arn:aws:elasticloadbalancing:us-east-1:111111111111:targetgroup/web/0123456789"
+_wfLbDnsName = "web-123456.us-east-1.elb.amazonaws.com"
+_wfLbZoneId = "Z35SXDOTRQ7X7K"
+
 _wfAlbSgArn = "sg-0alb0000000000000"
 _wfAlbSg = {"alb-security-group" = {Resource = {status = {atProvider = {id = "sg-0alb0000000000000"}}}}}
 _wfInstanceSg = {"instance-security-group" = {Resource = {status = {atProvider = {id = "sg-0inst000000000000"}}}}}
-_wfTargetGroup = {"target-group" = {Resource = {status = {atProvider = {arn = "arn:aws:elasticloadbalancing:us-east-1:111111111111:targetgroup/web/0123456789"}}}}}
+_wfTargetGroup = {"target-group" = {Resource = {status = {atProvider = {arn = _wfTargetGroupArn}}}}}
 _wfLoadBalancer = {"load-balancer" = {Resource = {status = {atProvider = {
-    arn = "arn:aws:elasticloadbalancing:us-east-1:111111111111:loadbalancer/app/web/abcdef"
-    dnsName = "web-123456.us-east-1.elb.amazonaws.com"
+    arn = _wfLbArn
+    dnsName = _wfLbDnsName
+    zoneId = _wfLbZoneId
 }}}}}
 _wfLaunchTemplate = {"launch-template" = {Resource = {status = {atProvider = {id = "lt-0123456789abcdef0"}}}}}
-_wfListener = {"listener" = {Resource = {status = {atProvider = {arn = "arn:aws:elasticloadbalancing:us-east-1:111111111111:listener/app/web/abcdef/0123"}}}}}
+
+# The certificate is a child XR: its status is read uncast, so it carries conditions too.
+_wfCertPending = {certificate = {Resource = {status = {certificateArn = _wfCertArn, validated = False, conditions = [{"type" = "Ready", status = "False"}]}}}}
+_wfCertValidated = {certificate = {Resource = {status = {certificateArn = _wfCertArn, validated = True, conditions = [{"type" = "Ready", status = "True"}]}}}}
 
 _wfStageSgs = _wfAlbSg | _wfInstanceSg
 _wfStageLbs = _wfAlbSg | _wfInstanceSg | _wfTargetGroup | _wfLoadBalancer | _wfLaunchTemplate
-_wfStageAll = _wfStageLbs | _wfListener
+_wfStageAll = _wfStageLbs | _wfCertValidated
 
 _wfComposed = lambda resources {
     [r for r in resources if r.kind != "WebFleet"]
@@ -42,11 +55,44 @@ _wfNamed = lambda resources, name {
     [r for r in _wfComposed(resources) if r.metadata.annotations["krm.kcl.dev/composition-resource-name"] == name]
 }
 
-test_webFleet_cold_start_emits_security_groups_and_target_group = lambda {
+_wfOfKind = lambda resources, kind {
+    [r for r in _wfComposed(resources) if r.kind == kind]
+}
+
+test_webFleet_cold_start_emits_security_groups_target_group_and_certificate = lambda {
     result = webfleet.composeWebFleet(_wfOxr, {})
 
-    assert len(_wfComposed(result)) == 3, "cold start: two security groups and the target group"
+    assert len(_wfComposed(result)) == 4, "cold start: two security groups, the target group and the certificate"
     assert len(_wfXr(result)) == 0, "cold start reports no status"
+}
+
+test_webFleet_certificate_is_a_child_tls_certificate_for_the_domain = lambda {
+    result = webfleet.composeWebFleet(_wfOxr, {})
+    cert = _wfNamed(result, "certificate")[0]
+
+    assert cert.apiVersion == "platform.demotw.com/v1alpha1"
+    assert cert.kind == "TlsCertificate"
+    assert cert.spec.domainName == "web.example.com"
+    assert cert.spec.hostedZoneId == "Z0123456789ABCDEFGHIJ"
+    assert cert.spec.region == "us-east-1"
+}
+
+test_webFleet_certificate_is_in_the_load_balancer_region = lambda {
+    oxr = {
+        apiVersion = "platform.demotw.com/v1alpha1"
+        kind = "WebFleet"
+        metadata = {name = "web-fleet"}
+        spec = {
+            name = "web"
+            domain = _wfDomain
+            region = "eu-west-1"
+            network = {vpcId = "vpc-0123456789abcdef0", publicSubnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"], privateSubnetIds = ["subnet-cccc3333", "subnet-dddd4444"]}
+            imageId = "ami-0123456789abcdef0"
+        }
+    }
+    result = webfleet.composeWebFleet(oxr, {})
+
+    assert _wfNamed(result, "certificate")[0].spec.region == "eu-west-1", "an ALB needs its certificate in its own region"
 }
 
 test_webFleet_security_groups_are_named_and_placed_in_the_vpc = lambda {
@@ -84,6 +130,7 @@ test_webFleet_port_and_health_check_path_are_passed_through = lambda {
         metadata = {name = "web-fleet"}
         spec = {
             name = "web"
+            domain = _wfDomain
             network = {vpcId = "vpc-0123456789abcdef0", publicSubnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"], privateSubnetIds = ["subnet-cccc3333", "subnet-dddd4444"]}
             imageId = "ami-0123456789abcdef0"
             port = 8080
@@ -100,7 +147,7 @@ test_webFleet_port_and_health_check_path_are_passed_through = lambda {
     assert instanceIngress.spec.forProvider.toPort == 8080
 }
 
-test_webFleet_alb_ingress_opens_the_listener_port_to_the_world = lambda {
+test_webFleet_alb_ingress_opens_port_80_to_the_world = lambda {
     result = webfleet.composeWebFleet(_wfOxr, _wfAlbSg)
     ingressRule = _wfNamed(result, "alb-ingress")[0]
 
@@ -114,10 +161,23 @@ test_webFleet_alb_ingress_opens_the_listener_port_to_the_world = lambda {
     assert ingressRule.spec.forProvider.cidrBlocks == ["0.0.0.0/0"]
 }
 
+test_webFleet_alb_ingress_opens_port_443_to_the_world = lambda {
+    result = webfleet.composeWebFleet(_wfOxr, _wfAlbSg)
+    ingressRule = _wfNamed(result, "alb-https-ingress")[0]
+
+    assert ingressRule.kind == "SecurityGroupRule"
+    assert ingressRule.spec.forProvider.securityGroupId == _wfAlbSgArn
+    assert ingressRule.spec.forProvider.$type == "ingress"
+    assert ingressRule.spec.forProvider.fromPort == 443
+    assert ingressRule.spec.forProvider.toPort == 443
+    assert ingressRule.spec.forProvider.cidrBlocks == ["0.0.0.0/0"]
+}
+
 test_webFleet_alb_ingress_waits_for_the_alb_security_group = lambda {
     result = webfleet.composeWebFleet(_wfOxr, {})
 
-    assert len(_wfNamed(result, "alb-ingress")) == 0, "no ALB ingress ingressRule until the ALB security group is observed"
+    assert len(_wfNamed(result, "alb-ingress")) == 0, "no ALB ingress rule until the ALB security group is observed"
+    assert len(_wfNamed(result, "alb-https-ingress")) == 0, "no HTTPS ingress rule until the ALB security group is observed"
     assert len(_wfNamed(result, "load-balancer")) == 0, "no load balancer until the ALB security group is observed"
 }
 
@@ -128,6 +188,7 @@ test_webFleet_launch_template_carries_user_data_base64_encoded = lambda {
         metadata = {name = "web-fleet"}
         spec = {
             name = "web"
+            domain = _wfDomain
             network = {vpcId = "vpc-0123456789abcdef0", publicSubnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"], privateSubnetIds = ["subnet-cccc3333", "subnet-dddd4444"]}
             imageId = "ami-0123456789abcdef0"
             userData = _wfUserData
@@ -192,23 +253,65 @@ test_webFleet_load_balancer_is_an_application_lb_in_the_subnets = lambda {
     assert lb.spec.forProvider.region == "us-east-1"
 }
 
-test_webFleet_listener_forwards_to_the_target_group = lambda {
-    result = webfleet.composeWebFleet(_wfOxr, _wfStageLbs)
-    listener = _wfNamed(result, "listener")[0]
+test_webFleet_https_listener_terminates_tls_and_forwards_to_the_target_group = lambda {
+    result = webfleet.composeWebFleet(_wfOxr, _wfStageAll)
+    listener = _wfNamed(result, "https-listener")[0]
     action = listener.spec.forProvider.defaultAction[0]
 
     assert listener.kind == "LBListener"
-    assert listener.spec.forProvider.port == 80
-    assert listener.spec.forProvider.$protocol == "HTTP"
-    assert listener.spec.forProvider.loadBalancerArn == "arn:aws:elasticloadbalancing:us-east-1:111111111111:loadbalancer/app/web/abcdef"
+    assert listener.spec.forProvider.port == 443
+    assert listener.spec.forProvider.$protocol == "HTTPS"
+    assert listener.spec.forProvider.certificateArn == _wfCertArn, "the validated certificate from the child"
+    assert listener.spec.forProvider.sslPolicy == "ELBSecurityPolicy-TLS13-1-2-2021-06"
+    assert listener.spec.forProvider.loadBalancerArn == _wfLbArn
     assert action.$type == "forward"
-    assert action.targetGroupArn == "arn:aws:elasticloadbalancing:us-east-1:111111111111:targetgroup/web/0123456789"
+    assert action.targetGroupArn == _wfTargetGroupArn
 }
 
-test_webFleet_listener_waits_for_the_load_balancer = lambda {
-    result = webfleet.composeWebFleet(_wfOxr, _wfAlbSg | _wfInstanceSg | _wfTargetGroup)
+test_webFleet_https_listener_waits_for_the_validated_certificate = lambda {
+    pending = webfleet.composeWebFleet(_wfOxr, _wfStageLbs | _wfCertPending)
 
-    assert len(_wfNamed(result, "listener")) == 0, "no listener until the load balancer is observed"
+    assert len(_wfNamed(pending, "https-listener")) == 0, "no HTTPS listener until the certificate is validated"
+    assert len(_wfNamed(webfleet.composeWebFleet(_wfOxr, _wfStageLbs), "https-listener")) == 0, "no certificate observed yet"
+}
+
+test_webFleet_http_listener_redirects_everything_to_https = lambda {
+    result = webfleet.composeWebFleet(_wfOxr, _wfStageAll)
+    listener = _wfNamed(result, "http-listener")[0]
+    action = listener.spec.forProvider.defaultAction[0]
+
+    assert listener.spec.forProvider.port == 80
+    assert listener.spec.forProvider.$protocol == "HTTP"
+    assert action.$type == "redirect"
+    assert action.redirect.$protocol == "HTTPS"
+    assert action.redirect.port == "443"
+    assert action.redirect.statusCode == "HTTP_301"
+}
+
+test_webFleet_http_listener_waits_for_the_validated_certificate = lambda {
+    result = webfleet.composeWebFleet(_wfOxr, _wfStageLbs | _wfCertPending)
+
+    assert len(_wfNamed(result, "http-listener")) == 0, "no redirect to an HTTPS listener that does not exist yet"
+}
+
+test_webFleet_domain_points_at_the_load_balancer = lambda {
+    result = webfleet.composeWebFleet(_wfOxr, _wfStageAll)
+    record = _wfNamed(result, "alias-record")[0]
+
+    assert record.apiVersion == "route53.aws.m.upbound.io/v1beta1"
+    assert record.kind == "Record"
+    assert record.spec.forProvider.zoneId == "Z0123456789ABCDEFGHIJ"
+    assert record.spec.forProvider.name == "web.example.com"
+    assert record.spec.forProvider.$type == "A"
+    assert record.spec.forProvider.alias.name == _wfLbDnsName
+    assert record.spec.forProvider.alias.zoneId == _wfLbZoneId, "the load balancer's own zone, as AWS reports it per region"
+    assert record.spec.forProvider.alias.evaluateTargetHealth == True
+}
+
+test_webFleet_domain_waits_for_the_load_balancer = lambda {
+    result = webfleet.composeWebFleet(_wfOxr, _wfAlbSg)
+
+    assert len(_wfNamed(result, "alias-record")) == 0, "no record until the load balancer has a DNS name"
 }
 
 test_webFleet_autoscaling_group_sizes_and_private_subnets = lambda {
@@ -229,7 +332,7 @@ test_webFleet_autoscaling_group_uses_the_launch_template_and_attaches_the_target
 
     assert asg.spec.forProvider.launchTemplate.id == "lt-0123456789abcdef0"
     assert asg.spec.forProvider.launchTemplate.version == "$Latest"
-    assert asg.spec.forProvider.trafficSource[0].identifier == "arn:aws:elasticloadbalancing:us-east-1:111111111111:targetgroup/web/0123456789"
+    assert asg.spec.forProvider.trafficSource[0].identifier == _wfTargetGroupArn
     assert asg.spec.forProvider.trafficSource[0].$type == "elbv2"
 }
 
@@ -240,10 +343,10 @@ test_webFleet_autoscaling_group_waits_for_the_launch_template = lambda {
 }
 
 test_webFleet_stages_emit_what_is_ready = lambda {
-    assert len(_wfComposed(webfleet.composeWebFleet(_wfOxr, _wfAlbSg))) == 5, "ALB security group observed: adds the ALB ingress ingressRule and the load balancer"
-    assert len(_wfComposed(webfleet.composeWebFleet(_wfOxr, _wfStageSgs))) == 9, "both security groups observed: adds the launch template, ingress and egress rules"
-    assert len(_wfComposed(webfleet.composeWebFleet(_wfOxr, _wfStageLbs))) == 11, "load balancer, target group and launch template observed: adds the listener and the ASG"
-    assert len(_wfComposed(webfleet.composeWebFleet(_wfOxr, _wfStageAll))) == 11, "fully observed emits the same resources"
+    assert len(_wfComposed(webfleet.composeWebFleet(_wfOxr, _wfAlbSg))) == 7, "ALB security group observed: adds the two ALB ingress rules and the load balancer"
+    assert len(_wfComposed(webfleet.composeWebFleet(_wfOxr, _wfStageSgs))) == 11, "both security groups observed: adds the launch template, instance rules and ALB egress"
+    assert len(_wfComposed(webfleet.composeWebFleet(_wfOxr, _wfStageLbs))) == 13, "load balancer, target group and launch template observed: adds the ASG and the domain's record, no listeners until the certificate is validated"
+    assert len(_wfComposed(webfleet.composeWebFleet(_wfOxr, _wfStageAll))) == 15, "certificate validated: adds the HTTPS and redirect listeners and the domain's record"
 }
 
 test_webFleet_status_reports_the_load_balancer_once_its_dns_name_is_known = lambda {
@@ -252,8 +355,8 @@ test_webFleet_status_reports_the_load_balancer_once_its_dns_name_is_known = lamb
 
     assert xr.kind == "WebFleet"
     assert xr.apiVersion == "platform.demotw.com/v1alpha1"
-    assert xr.status.loadBalancerArn == "arn:aws:elasticloadbalancing:us-east-1:111111111111:loadbalancer/app/web/abcdef"
-    assert xr.status.loadBalancerDnsName == "web-123456.us-east-1.elb.amazonaws.com"
+    assert xr.status.loadBalancerArn == _wfLbArn
+    assert xr.status.loadBalancerDnsName == _wfLbDnsName
 }
 
 test_webFleet_no_status_before_the_load_balancer_has_a_dns_name = lambda {
@@ -265,6 +368,7 @@ test_webFleet_no_status_before_the_load_balancer_has_a_dns_name = lambda {
 test_webFleet_spec_accepts_two_subnets_and_ordered_sizes = lambda {
     spec = schemas_compositions.WebFleetSpec {
         name = "web"
+        domain = _wfDomain
         network = {vpcId = "vpc-0123456789abcdef0", publicSubnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"], privateSubnetIds = ["subnet-cccc3333", "subnet-dddd4444"]}
         imageId = "ami-0123456789abcdef0"
         minSize = 2
@@ -273,6 +377,7 @@ test_webFleet_spec_accepts_two_subnets_and_ordered_sizes = lambda {
 
     assert spec.region == "us-east-1"
     assert spec.instanceType == "t3.micro"
+    assert spec.domain.name == "web.example.com"
 }
 
 test_webFleet_load_balancer_uses_public_subnets_and_instances_use_private_ones = lambda {
@@ -318,16 +423,13 @@ test_webFleet_instance_egress_waits_for_the_instance_security_group = lambda {
     assert len(_wfNamed(result, "instance-egress")) == 0, "no instance egress until the instance security group is observed"
 }
 
-_wfOfKind = lambda resources, kind {
-    [r for r in _wfComposed(resources) if r.kind == kind]
-}
-
 _wfScheduledOxr = {
     apiVersion = "platform.demotw.com/v1alpha1"
     kind = "WebFleet"
     metadata = {name = "web-fleet"}
     spec = {
         name = "web"
+        domain = _wfDomain
         network = {vpcId = "vpc-0123456789abcdef0", publicSubnetIds = ["subnet-aaaa1111", "subnet-bbbb2222"], privateSubnetIds = ["subnet-cccc3333", "subnet-dddd4444"]}
         imageId = "ami-0123456789abcdef0"
         scalingSchedules = [
@@ -392,7 +494,7 @@ test_webFleet_scaling_schedules_wait_for_the_autoscaling_group = lambda {
 }
 
 test_webFleet_scaling_schedules_add_one_resource_each = lambda {
-    assert len(_wfComposed(webfleet.composeWebFleet(_wfScheduledOxr, _wfStageAll))) == 14, "fully observed: the 11 fleet resources plus one schedule per entry"
+    assert len(_wfComposed(webfleet.composeWebFleet(_wfScheduledOxr, _wfStageAll))) == 18, "fully observed: the 15 fleet resources plus one schedule per entry"
 }
 
 test_webFleet_scaling_schedule_spec_accepts_a_size_change = lambda {

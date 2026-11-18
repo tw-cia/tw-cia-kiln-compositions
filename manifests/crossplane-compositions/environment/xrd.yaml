@@ -53,6 +53,16 @@ spec:
               webFleets:
                 items:
                   properties:
+                    domain:
+                      properties:
+                        hostedZoneId:
+                          type: string
+                        name:
+                          type: string
+                      required:
+                      - name
+                      - hostedZoneId
+                      type: object
                     healthCheckPath:
                       default: /
                       type: string
@@ -102,6 +112,7 @@ spec:
                       type: string
                   required:
                   - name
+                  - domain
                   - imageId
                   type: object
                 type: array

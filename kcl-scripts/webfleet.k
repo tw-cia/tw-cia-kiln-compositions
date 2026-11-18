@@ -23,6 +23,8 @@ composeWebFleet = lambda oxr, ocds -> [any] {
     _vpcId = spec.network.vpcId
     _subnetIds = spec.network.publicSubnetIds
     _instanceSubnetIds = spec.network.privateSubnetIds
+    _domainName = spec.domain.name
+    _hostedZoneId = spec.domain.hostedZoneId
     _port = spec.port
     _healthCheckPath = spec.healthCheckPath
     _minSize = spec.minSize
@@ -41,7 +43,11 @@ composeWebFleet = lambda oxr, ocds -> [any] {
     _launchTemplateName = "launch-template"
     _loadBalancerName = "load-balancer"
     _targetGroupName = "target-group"
-    _listenerName = "listener"
+    _httpListenerName = "http-listener"
+    _httpsListenerName = "https-listener"
+    _httpsIngressName = "alb-https-ingress"
+    _certificateName = "certificate"
+    _aliasRecordName = "alias-record"
     _autoScalingGroupName = "autoscaling-group"
 
     _albSgId = ocds[_albSgName]?.Resource?.status?.atProvider?.id
@@ -50,7 +56,14 @@ composeWebFleet = lambda oxr, ocds -> [any] {
     _lbAtProvider = ocds[_loadBalancerName]?.Resource?.status?.atProvider
     _lbArn = _lbAtProvider?.arn
     _lbDnsName = _lbAtProvider?.dnsName
+    _lbZoneId = _lbAtProvider?.zoneId
     _launchTemplateId = ocds[_launchTemplateName]?.Resource?.status?.atProvider?.id
+
+    # The certificate is a child XR in the fleet's region: an ALB needs a certificate
+    # in its own region. Its status is read uncast, so it carries conditions too.
+    _certificateStatus = ocds[_certificateName]?.Resource?.status
+    _certificateArn = _certificateStatus?.certificateArn
+    _certificateValidated = _certificateStatus?.validated or False
 
     # Ungated: these two security groups are the first things created.
     _albSecurityGroupForProvider: schemas_providers.Ec2AwsmUpboundIoV1beta1SecurityGroupSpecForProvider = {
@@ -142,16 +155,74 @@ composeWebFleet = lambda oxr, ocds -> [any] {
         cidrBlocks = ["0.0.0.0/0"]
     })] if _instanceSgId else []
 
-    _listeners = [awsResource("elbv2.aws.m.upbound.io/v1beta1", "LBListener", _listenerName, schemas_providers.Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProvider {
+    _albHttpsIngressRules = [awsResource("ec2.aws.m.upbound.io/v1beta1", "SecurityGroupRule", _httpsIngressName, schemas_providers.Ec2AwsmUpboundIoV1beta1SecurityGroupRuleSpecForProvider {
+        region = _region
+        securityGroupId = _albSgId
+        $type = "ingress"
+        $protocol = "tcp"
+        fromPort = 443
+        toPort = 443
+        cidrBlocks = ["0.0.0.0/0"]
+    })] if _albSgId else []
+
+    # The certificate is validated before either listener exists, so nothing redirects
+    # to an HTTPS listener that is not there yet.
+    _httpsListeners = [awsResource("elbv2.aws.m.upbound.io/v1beta1", "LBListener", _httpsListenerName, schemas_providers.Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProvider {
+        region = _region
+        loadBalancerArn = _lbArn
+        port = 443
+        $protocol = "HTTPS"
+        certificateArn = _certificateArn
+        sslPolicy = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+        defaultAction = [schemas_providers.Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultAction {
+            $type = "forward"
+            targetGroupArn = _targetGroupArn
+        }]
+    })] if _lbArn and _targetGroupArn and _certificateValidated else []
+
+    _httpListeners = [awsResource("elbv2.aws.m.upbound.io/v1beta1", "LBListener", _httpListenerName, schemas_providers.Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProvider {
         region = _region
         loadBalancerArn = _lbArn
         port = 80
         $protocol = "HTTP"
         defaultAction = [schemas_providers.Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultAction {
-            $type = "forward"
-            targetGroupArn = _targetGroupArn
+            $type = "redirect"
+            redirect = schemas_providers.Elbv2AwsmUpboundIoV1beta1LBListenerSpecForProviderDefaultActionRedirect {
+                $protocol = "HTTPS"
+                port = "443"
+                statusCode = "HTTP_301"
+            }
         }]
-    })] if _lbArn and _targetGroupArn else []
+    })] if _lbArn and _targetGroupArn and _certificateValidated else []
+
+    _certificate = {
+        apiVersion = "platform.demotw.com/v1alpha1"
+        kind = "TlsCertificate"
+        metadata.annotations = {"krm.kcl.dev/composition-resource-name" = _certificateName}
+        spec = schemas_compositions.TlsCertificateSpec {
+            domainName = _domainName
+            hostedZoneId = _hostedZoneId
+            region = _region
+        }
+    }
+
+    # The domain points at the load balancer, which AWS names with its own zone ID per region.
+    _aliasRecords = [{
+        apiVersion = "route53.aws.m.upbound.io/v1beta1"
+        kind = "Record"
+        metadata.annotations = {"krm.kcl.dev/composition-resource-name" = _aliasRecordName}
+        spec.forProvider = schemas_providers.Route53AwsmUpboundIoV1beta1RecordSpecForProvider {
+            zoneId = _hostedZoneId
+            name = _domainName
+            $type = "A"
+            allowOverwrite = True
+            alias = schemas_providers.Route53AwsmUpboundIoV1beta1RecordSpecForProviderAlias {
+                name = _lbDnsName
+                zoneId = _lbZoneId
+                evaluateTargetHealth = True
+            }
+        }
+    }] if _lbDnsName and _lbZoneId else []
 
     _autoScalingGroups = [awsResource("autoscaling.aws.m.upbound.io/v1beta1", "AutoscalingGroup", _autoScalingGroupName, schemas_providers.AutoscalingAwsmUpboundIoV1beta1AutoscalingGroupSpecForProvider {
         region = _region
@@ -190,5 +261,5 @@ composeWebFleet = lambda oxr, ocds -> [any] {
         status = schemas_compositions.WebFleetStatus {loadBalancerArn = _lbArn, loadBalancerDnsName = _lbDnsName}
     } if _lbDnsName else None
 
-    [_albSecurityGroup, _instanceSecurityGroup] + _targetGroups + _albIngressRules + _loadBalancers + _launchTemplates + _instanceIngressRules + _albEgressRules + _instanceEgressRules + _listeners + _autoScalingGroups + _scalingScheduleActions + ([_xr] if _xr else [])
+    [_certificate, _albSecurityGroup, _instanceSecurityGroup] + _targetGroups + _albIngressRules + _albHttpsIngressRules + _loadBalancers + _launchTemplates + _instanceIngressRules + _albEgressRules + _instanceEgressRules + _httpListeners + _httpsListeners + _aliasRecords + _autoScalingGroups + _scalingScheduleActions + ([_xr] if _xr else [])
 }
