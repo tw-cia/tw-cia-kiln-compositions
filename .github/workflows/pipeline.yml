@@ -73,10 +73,18 @@ jobs:
           crossplane version --client
         env:
           XP_VERSION: v2.5.0
+      - name: install kiln
+        run: |
+          set -euo pipefail
+          uv tool install "git+https://github.com/leprechaun/kiln#subdirectory=tooling"
+          echo "$(uv tool dir --bin)" >> "$GITHUB_PATH"
+      - name: kiln pull-crds
+        # crds/ is git-ignored, so a fresh checkout has none; render-all needs them.
+        run: kiln pull-crds
       - name: kiln generate-all
-        run: uvx --from "git+https://github.com/leprechaun/kiln#subdirectory=tooling" kiln generate-all
+        run: kiln generate-all
       - name: kiln render-all
-        run: uvx --from "git+https://github.com/leprechaun/kiln#subdirectory=tooling" kiln render-all
+        run: kiln render-all
       - name: upload manifests
         if: always()
         uses: actions/upload-artifact@v7
