@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.0
       - name: install kcl
         run: |
           set -euo pipefail
@@ -61,6 +61,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           KCL_VERSION: v0.13.2
+      - name: install crossplane CLI
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          base="https://cli.crossplane.io/stable/$XP_VERSION/bin/linux_amd64"
+          curl -sfL -o crossplane "$base/crossplane"
+          curl -sfL -o crossplane.sha256 "$base/crossplane.sha256"
+          echo "$(cut -d' ' -f1 crossplane.sha256)  crossplane" | sha256sum -c -
+          sudo install -m 0755 crossplane /usr/local/bin/crossplane
+          crossplane version --client
+        env:
+          XP_VERSION: v2.5.0
       - name: kiln generate-all
         run: uvx --from "git+https://github.com/leprechaun/kiln#subdirectory=tooling" kiln generate-all
       - name: kiln render-all
