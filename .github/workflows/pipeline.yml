@@ -93,6 +93,7 @@ jobs:
           path: manifests/crossplane-compositions/**/*.yaml
 
   list-pods:
+    name: apply manifests
     needs: generate-render
     runs-on: ubuntu-latest
     steps:
