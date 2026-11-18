@@ -1,0 +1,50 @@
+# The web service behind CloudFront, in vpc-0d1a71fdd00386682 (cia-test, ap-southeast-1).
+# Viewers reach cdn.trololo.demotw.com (CloudFront, us-east-1 certificate). CloudFront reaches the
+# origin over HTTPS at origin.trololo.demotw.com (load balancer, ap-southeast-1 certificate).
+# The origin load balancer accepts traffic from CloudFront's origin-facing prefix list only.
+# Apply after the CdnWebService XRD and Composition in manifests/crossplane-compositions/ are installed.
+apiVersion: platform.demotw.com/v1alpha1
+kind: CdnWebService
+metadata:
+  name: web-cdn
+spec:
+  domainName: cdn.trololo.demotw.com
+  originDomainName: origin.trololo.demotw.com
+  hostedZoneId: Z0510802PA88E7HZZ597
+  origin:
+    region: ap-southeast-1
+    vpcId: vpc-0d1a71fdd00386682
+    loadBalancerSubnetIds:
+      - subnet-053b0cb241f26ca4c # public, ap-southeast-1b
+      - subnet-0dd1501720b3d186f # public, ap-southeast-1a
+    loadBalancerSecurityGroupIds:
+      - sg-08a6b116539f6b1c6 # cdn-origin-lb-sg: 443 from the CloudFront origin-facing prefix list
+    instanceSubnetIds:
+      - subnet-03fe35a36c221d2fb # private, ap-southeast-1a
+      - subnet-05fb07c62d75e993b # private, ap-southeast-1b
+    instanceSecurityGroupIds:
+      - sg-03af151e88972e7e8 # cdn-origin-instance-sg: 80 from cdn-origin-lb-sg only
+    # Debian 12 (bookworm), amd64, ap-southeast-1, published by Debian (owner 136693071363).
+    imageId: ami-0b220b5c3dad9b55a
+    instanceType: t3.micro
+    minSize: 2
+    maxSize: 3
+    desiredCapacity: 2
+    targetPort: 80
+    userData: |
+      #!/bin/bash
+      set -euo pipefail
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get update
+      apt-get install -y nginx
+      cat > /var/www/html/index.html <<'HTML'
+      <!doctype html>
+      <html>
+        <head><meta charset="utf-8"><title>Hello through CloudFront</title></head>
+        <body>
+          <h1>Hello from nginx on Debian, through CloudFront</h1>
+          <p>Served by an instance in an auto-scaling group behind a load balancer, fronted by CloudFront.</p>
+        </body>
+      </html>
+      HTML
+      systemctl enable --now nginx

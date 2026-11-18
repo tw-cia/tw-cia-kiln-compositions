@@ -474,3 +474,49 @@ that the project docs had not fixed.
 - `M kcl-scripts/staticwebsite.k`
 - `A kcl-scripts/tlscertificate.k`
 - `A kcl-scripts/tlscertificate_test.k`
+
+### 15. Infrastructure prompt: webservice, load balancer and autoscaling experiments
+*2026-11-18T10:53:19 UTC*
+
+Session 1c73f64f (2026-11-18, 09:47-10:53). The second prompt, the Kiln
+infrastructure brief: auto-scaling group, launch template, load balancer,
+certificate, CloudFront in front of the load balancer. This session tried
+the pieces separately.
+
+What changed: webservice.k, loadbalancer.k, autoscalinggroup.k, cdnwebservice.k
+and their tests, deployments/web.yaml and cdn-web.yaml, and schemas for each.
+
+Reasoning: each AWS piece got its own kind, to see how they compose. The
+session looked up the Terraform documentation for each field, to check the
+provider's field names.
+
+Challenge: the pieces overlapped, and the final design merged them into
+WebFleet and CdnDistribution in the next session.
+
+**Tests:** error[E2G22]: TypeError | error[E2G22]: TypeError | error[E2G22]: TypeError
+**Generation:** ok
+
+**Files changed:**
+- `A deployments/cdn-web.yaml`
+- `A deployments/web.yaml`
+- `A kcl-scripts/autoscalinggroup.k`
+- `A kcl-scripts/autoscalinggroup_test.k`
+- `A kcl-scripts/cdnwebservice.k`
+- `A kcl-scripts/cdnwebservice_test.k`
+- `A kcl-scripts/loadbalancer.k`
+- `A kcl-scripts/loadbalancer_test.k`
+- `M kcl-scripts/schemas_compositions.k`
+- `A kcl-scripts/webservice.k`
+- `A kcl-scripts/webservice_test.k`
+- `A manifests/crossplane-compositions/autoscalinggroup/composition.yaml`
+- `A manifests/crossplane-compositions/autoscalinggroup/xrd.yaml`
+- `A manifests/crossplane-compositions/cdnwebservice/composition.yaml`
+- `A manifests/crossplane-compositions/cdnwebservice/xrd.yaml`
+- `A manifests/crossplane-compositions/loadbalancer/composition.yaml`
+- `A manifests/crossplane-compositions/loadbalancer/xrd.yaml`
+- `A manifests/crossplane-compositions/staticwebsite/composition.yaml`
+- `M manifests/crossplane-compositions/staticwebsite/xrd.yaml`
+- `A manifests/crossplane-compositions/tlscertificate/composition.yaml`
+- `A manifests/crossplane-compositions/tlscertificate/xrd.yaml`
+- `A manifests/crossplane-compositions/webservice/composition.yaml`
+- `A manifests/crossplane-compositions/webservice/xrd.yaml`

@@ -1,0 +1,342 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: webservice-kcl-first
+spec:
+  compositeTypeRef:
+    apiVersion: platform.example.com/v1alpha1
+    kind: WebService
+  mode: Pipeline
+  pipeline:
+  - step: compose
+    functionRef:
+      name: function-kcl
+    input:
+      apiVersion: krm.kcl.dev/v1alpha1
+      kind: KCLInput
+      spec:
+        source: |
+          # Curated provider schemas. `kiln import <crd>` appends here.
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderAlias:
+              evaluateTargetHealth?: bool
+              name?: str
+              zoneId?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderCidrRoutingPolicy:
+              collectionId?: str
+              locationName?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderFailoverRoutingPolicy:
+              $type?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeolocationRoutingPolicy:
+              continent?: str
+              country?: str
+              subdivision?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeoproximityRoutingPolicy:
+              awsRegion?: str
+              bias?: float
+              coordinates?: [Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeoproximityRoutingPolicyCoordinates]
+              localZoneGroup?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDRef:
+              name: str
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDRefPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDSelectorPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderLatencyRoutingPolicy:
+              region: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsRefs:
+              name: str
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsRefsPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsSelectorPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderWeightedRoutingPolicy:
+              weight?: float
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDRef:
+              name: str
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDRefPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDSelector:
+              matchControllerRef?: bool
+              matchLabels?: {str:str}
+              namespace?: str
+              policy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDSelectorPolicy
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeoproximityRoutingPolicyCoordinates:
+              latitude?: str
+              longitude?: str
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsRefsPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProvider:
+              alias?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderAlias
+              allowOverwrite?: bool
+              cidrRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderCidrRoutingPolicy
+              failoverRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderFailoverRoutingPolicy
+              geolocationRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeolocationRoutingPolicy
+              geoproximityRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderGeoproximityRoutingPolicy
+              healthCheckId?: str
+              healthCheckIdRef?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDRef
+              healthCheckIdSelector?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderHealthCheckIDSelector
+              latencyRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderLatencyRoutingPolicy
+              multivalueAnswerRoutingPolicy?: bool
+              name?: str
+              records?: [str]
+              recordsRefs?: [Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsRefs]
+              recordsSelector?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderRecordsSelector
+              setIdentifier?: str
+              ttl?: float
+              $type?: str
+              weightedRoutingPolicy?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderWeightedRoutingPolicy
+              zoneId?: str
+              zoneIdRef?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDRef
+              zoneIdSelector?: Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDSelector
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDRefPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          schema Route53AwsmUpboundIoV1beta1RecordSpecForProviderZoneIDSelectorPolicy:
+              resolution?: "Required" | "Optional" = "Required"
+              resolve?: "Always" | "IfNotPresent"
+
+          # Your composite resource (XR) spec schemas, one per kind, e.g. `schema MyKindSpec:`.
+
+          # A DNS-validated ACM certificate. CloudFront only accepts certificates from us-east-1,
+          # which is the default.
+          schema TlsCertificateSpec:
+              domainName: str
+              hostedZoneId: str
+              subjectAlternativeNames?: [str]
+              region: str = "us-east-1"
+
+          # A static website served by CloudFront from a private S3 bucket, behind a custom domain.
+
+          # An auto-scaling group of identical instances, built from a launch template.
+          schema AutoScalingGroupSpec:
+              region: str = "us-east-1"
+              imageId: str
+              instanceType: str = "t3.micro"
+              subnetIds: [str]
+              securityGroupIds?: [str]
+              minSize: int = 1
+              maxSize: int = 3
+              desiredCapacity?: int
+              # A plain-text boot script, run by each instance on launch. The function encodes it for AWS.
+              userData?: str
+              check:
+                  minSize <= maxSize, "minSize must not be greater than maxSize"
+                  desiredCapacity == Undefined or (desiredCapacity >= minSize and desiredCapacity <= maxSize), "desiredCapacity must be between minSize and maxSize"
+                  userData == Undefined or len(userData) <= 16384, "userData must be at most 16 KB"
+
+          # An application load balancer serving HTTPS with an existing DNS-validated certificate.
+          schema LoadBalancerSpec:
+              region: str = "us-east-1"
+              vpcId: str
+              subnetIds: [str]
+              securityGroupIds: [str]
+              # The ARN of a validated certificate, for example TlsCertificate status.certificateArn.
+              certificateArn: str
+              targetPort: int = 80
+              # The name of an AutoScalingGroup XR whose instances join the target group.
+              autoScalingGroupName?: str
+              check:
+                  len(subnetIds) >= 2, "an application load balancer needs at least two subnets"
+
+          # A complete web service: a DNS-validated certificate, an auto-scaling group, a load balancer
+          # serving HTTPS with that certificate, and a DNS alias from the domain to the load balancer.
+          # Everything about a web service except its name: where it runs and what it serves.
+          # WebServiceSpec adds the name, and CdnWebServiceSpec nests one of these as its origin.
+          schema WebServiceSettings:
+              region: str = "us-east-1"
+              vpcId: str
+              # The load balancer is internet-facing, so it takes public subnets.
+              loadBalancerSubnetIds: [str]
+              loadBalancerSecurityGroupIds: [str]
+              # The instances take private subnets with a route out, so they can install software at boot.
+              instanceSubnetIds: [str]
+              instanceSecurityGroupIds: [str]
+              imageId: str
+              instanceType: str = "t3.micro"
+              minSize: int = 1
+              maxSize: int = 3
+              desiredCapacity?: int
+              targetPort: int = 80
+              # A plain-text boot script for each instance. See AutoScalingGroupSpec.
+              userData?: str
+              check:
+                  len(loadBalancerSubnetIds) >= 2, "the load balancer needs at least two subnets"
+                  minSize <= maxSize, "minSize must not be greater than maxSize"
+                  desiredCapacity == Undefined or (desiredCapacity >= minSize and desiredCapacity <= maxSize), "desiredCapacity must be between minSize and maxSize"
+                  userData == Undefined or len(userData) <= 16384, "userData must be at most 16 KB"
+
+          schema WebServiceSpec(WebServiceSettings):
+              domainName: str
+              hostedZoneId: str
+
+          schema WebServiceStatus:
+              url?: str
+              loadBalancerDnsName?: str
+
+          # A web service served through CloudFront. The public name is a CloudFront alias with a us-east-1
+          # certificate. CloudFront reaches the origin, a WebService at originDomainName, over HTTPS.
+          schema CdnWebServiceSpec:
+              domainName: str
+              hostedZoneId: str
+              originDomainName: str
+              origin: WebServiceSettings
+              check:
+                  domainName != originDomainName, "the public name and the origin name must differ"
+
+          webServiceCertificateName = "certificate"
+          webServiceAutoScalingGroupName = "auto-scaling-group"
+          webServiceLoadBalancerName = "load-balancer"
+          webServiceAliasName = "domain-alias"
+
+          composeWebService = lambda oxr, ocds -> [any] {
+              # Bound to a local, so the dicts below can use `spec` as a key without shadowing the XR's spec.
+              _webSpec: WebServiceSpec = oxr.spec
+
+              # Each child takes a name from the XR, so the cloud objects are easy to find and the group's name is known.
+              _name = oxr.metadata.name
+              _certificateChildName = "${_name}-certificate"
+              _autoScalingGroupChildName = "${_name}-asg"
+              _loadBalancerChildName = "${_name}-lb"
+
+              # The certificate is requested in the load balancer's region: an ALB only accepts certificates from its own region.
+              _certificate = {
+                  apiVersion = "platform.demotw.com/v1alpha1"
+                  kind = "TlsCertificate"
+                  metadata = {
+                      name = _certificateChildName
+                      annotations = {"krm.kcl.dev/composition-resource-name" = webServiceCertificateName}
+                  }
+                  spec = TlsCertificateSpec {
+                      domainName = _webSpec.domainName
+                      hostedZoneId = _webSpec.hostedZoneId
+                      region = _webSpec.region
+                  }
+              }
+
+              _autoScalingGroup = {
+                  apiVersion = "platform.demotw.com/v1alpha1"
+                  kind = "AutoScalingGroup"
+                  metadata = {
+                      name = _autoScalingGroupChildName
+                      annotations = {"krm.kcl.dev/composition-resource-name" = webServiceAutoScalingGroupName}
+                  }
+                  spec = AutoScalingGroupSpec {
+                      region = _webSpec.region
+                      imageId = _webSpec.imageId
+                      instanceType = _webSpec.instanceType
+                      subnetIds = _webSpec.instanceSubnetIds
+                      securityGroupIds = _webSpec.instanceSecurityGroupIds
+                      minSize = _webSpec.minSize
+                      maxSize = _webSpec.maxSize
+                      desiredCapacity = _webSpec.desiredCapacity
+                      userData = _webSpec.userData
+                  }
+              }
+
+              # The certificate reports validated only once ACM has issued it. The load balancer's HTTPS listener needs an issued certificate.
+              _certificateStatus = ocds[webServiceCertificateName]?.Resource?.status
+              _certificateArn = _certificateStatus?.certificateArn if _certificateStatus?.validated else None
+
+              _loadBalancer = {
+                  apiVersion = "platform.demotw.com/v1alpha1"
+                  kind = "LoadBalancer"
+                  metadata = {
+                      name = _loadBalancerChildName
+                      annotations = {"krm.kcl.dev/composition-resource-name" = webServiceLoadBalancerName}
+                  }
+                  spec = LoadBalancerSpec {
+                      region = _webSpec.region
+                      vpcId = _webSpec.vpcId
+                      subnetIds = _webSpec.loadBalancerSubnetIds
+                      securityGroupIds = _webSpec.loadBalancerSecurityGroupIds
+                      certificateArn = _certificateArn
+                      targetPort = _webSpec.targetPort
+                      autoScalingGroupName = _autoScalingGroupChildName
+                  }
+              } if _certificateArn else None
+
+              # The alias needs the load balancer's DNS name and hosted zone, which it reports once it exists.
+              _loadBalancerStatus = ocds[webServiceLoadBalancerName]?.Resource?.status
+              _loadBalancerDnsName = _loadBalancerStatus?.dnsName
+              _loadBalancerZoneId = _loadBalancerStatus?.zoneId
+
+              _alias = {
+                  apiVersion = "route53.aws.m.upbound.io/v1beta1"
+                  kind = "Record"
+                  metadata.annotations = {"krm.kcl.dev/composition-resource-name" = webServiceAliasName}
+                  spec.forProvider = Route53AwsmUpboundIoV1beta1RecordSpecForProvider {
+                      zoneId = _webSpec.hostedZoneId
+                      name = _webSpec.domainName
+                      $type = "A"
+                      alias = Route53AwsmUpboundIoV1beta1RecordSpecForProviderAlias {
+                          name = _loadBalancerDnsName
+                          zoneId = _loadBalancerZoneId
+                          evaluateTargetHealth = True
+                      }
+                  }
+              } if _loadBalancerDnsName and _loadBalancerZoneId else None
+
+              _xr = {
+                  apiVersion = oxr.apiVersion
+                  kind = oxr.kind
+                  metadata = oxr.metadata
+                  status = WebServiceStatus {
+                      url = "https://${_webSpec.domainName}"
+                      loadBalancerDnsName = _loadBalancerDnsName
+                  }
+              } if _alias else None
+
+              [_certificate, _autoScalingGroup] + ([_loadBalancer] if _loadBalancer else []) + ([_alias] if _alias else []) + ([_xr] if _xr else [])
+          }
+
+          _kilnSpecFields = ["desiredCapacity", "domainName", "hostedZoneId", "imageId", "instanceSecurityGroupIds", "instanceSubnetIds", "instanceType", "loadBalancerSecurityGroupIds", "loadBalancerSubnetIds", "maxSize", "minSize", "region", "targetPort", "userData", "vpcId"]
+          _kilnObservedXr = option("params").oxr
+          _kilnOxr = _kilnObservedXr | {spec = {k: v for k, v in _kilnObservedXr.spec if k in _kilnSpecFields}} if _kilnObservedXr?.spec else _kilnObservedXr
+          _kilnProviderConfigRef = {kind = "ClusterProviderConfig", name = "pod-identity"}
+          _kilnIsManaged = lambda r: any -> bool {
+              "forProvider" in (r?.spec or {}) and not (r?.apiVersion or "").startswith("platform.example.com/")
+          }
+          _kilnWithProviderConfig = lambda r: any -> any {
+              r | {spec.providerConfigRef = _kilnProviderConfigRef} if _kilnIsManaged(r) and not r?.spec?.providerConfigRef else r
+          }
+          items = [_kilnWithProviderConfig(r) for r in composeWebService(_kilnOxr, option("params").ocds)]
+  - step: auto-ready
+    functionRef:
+      name: function-auto-ready

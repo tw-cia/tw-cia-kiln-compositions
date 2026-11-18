@@ -1,0 +1,84 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: webservices.platform.example.com
+spec:
+  group: platform.example.com
+  names:
+    kind: WebService
+    plural: webservices
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            properties:
+              desiredCapacity:
+                format: int64
+                type: integer
+              domainName:
+                type: string
+              hostedZoneId:
+                type: string
+              imageId:
+                type: string
+              instanceSecurityGroupIds:
+                items:
+                  type: string
+                type: array
+              instanceSubnetIds:
+                items:
+                  type: string
+                type: array
+              instanceType:
+                default: t3.micro
+                type: string
+              loadBalancerSecurityGroupIds:
+                items:
+                  type: string
+                type: array
+              loadBalancerSubnetIds:
+                items:
+                  type: string
+                type: array
+              maxSize:
+                default: 3
+                format: int64
+                type: integer
+              minSize:
+                default: 1
+                format: int64
+                type: integer
+              region:
+                default: us-east-1
+                type: string
+              targetPort:
+                default: 80
+                format: int64
+                type: integer
+              userData:
+                type: string
+              vpcId:
+                type: string
+            required:
+            - domainName
+            - hostedZoneId
+            - vpcId
+            - loadBalancerSubnetIds
+            - loadBalancerSecurityGroupIds
+            - instanceSubnetIds
+            - instanceSecurityGroupIds
+            - imageId
+            type: object
+          status:
+            properties:
+              loadBalancerDnsName:
+                type: string
+              url:
+                type: string
+            type: object

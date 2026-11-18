@@ -1,0 +1,42 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: tlscertificates.platform.example.com
+spec:
+  group: platform.example.com
+  names:
+    kind: TlsCertificate
+    plural: tlscertificates
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            properties:
+              domainName:
+                type: string
+              hostedZoneId:
+                type: string
+              region:
+                default: us-east-1
+                type: string
+              subjectAlternativeNames:
+                items:
+                  type: string
+                type: array
+            required:
+            - domainName
+            - hostedZoneId
+            type: object
+          status:
+            properties:
+              certificateArn:
+                type: string
+              validated:
+                type: boolean
+            type: object
